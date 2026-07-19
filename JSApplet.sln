@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 1.00
+Project("{66355F20-A65B-11D0-BFB5-00A0C91EBFA0}") = "JSApplet", "JSApplet.vjp", "{352FBFC9-59B3-44DA-A145-5CAD05A10E42}"
+	ProjectSection(SourceCodeControl) = preProject
+		SccProjectName = \u0022$/JSApplet\u0022,\u0020BAAAAAAA
+		SccLocalPath = .
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(LocalDeployment) = postSolution
+		StartupProject = {352FBFC9-59B3-44DA-A145-5CAD05A10E42}
+	EndGlobalSection
+	GlobalSection(BuildOrder) = postSolution
+		0 = {352FBFC9-59B3-44DA-A145-5CAD05A10E42}
+	EndGlobalSection
+	GlobalSection(SourceCodeControl) = preSolution
+		SccProjectName = \u0022$/JSApplet\u0022,\u0020BAAAAAAA
+		SccLocalPath = .
+	EndGlobalSection
+	GlobalSection(DeploymentRoot) = postSolution
+	EndGlobalSection
+EndGlobal

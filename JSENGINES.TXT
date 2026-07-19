@@ -1,0 +1,83 @@
+http://cn.yahoo.com/
+GB_Chinese Yahoo! / 雅虎中国
+Chinese
+http://openfind.yahoo.com/bin/query_gb?p=^&hc=0&hs=0&h=s
+<DL>
+/DL>
+
+http://www2.yeah.net/
+yeah! / 网易
+Chinese
+http://www2.yeah.net/cgi-bin/query2.exe?query=^&start=0&REXP=OR
+<DL>
+/DL>
+
+http://www.yeah.net/
+yeah!(Altavista) / 网易(Altavista)
+Chinese
+http://www.altavista.com/cgi-bin/query?pg=q&KL=zh&enc=euccn&kl=zh&text=yes&q=^&stq=`0&c9k
+<dl>
+/dl>
+
+http://www.zhaodaola.com.cn/
+Zhaodaola / 找到啦
+Chinese
+http://www.zhaodaola.com.cn/cgi-bin/fs.cgi?query=^&nh=`
+<li 
+nt>`
+
+http://www.sohu.com/
+Sohu / 搜狐
+Chinese
+http://search.sohu.com/cgi-bin/search_main.cgi?txt_keyword=^&page_index=`&catagory=main
+<li>
+/li>
+
+http://www.lycos.com/
+Lycos
+English
+http://www.lycos.com/cgi-bin/pursuit?query=^&matchmode=or&cat=lycos&s=Y&first=`1
+b><a
+2> |
+
+http://www.altavista.com/
+Altavista
+English
+http://www.altavista.com/cgi-bin/query?pg=q&q=^&stq=`0&c9k
+<dl>
+/dl>
+
+http://chinese.excite.com/
+Chinese Excite / 中文Excite
+Chinese
+http://chinese.excite.com/search/search.dcg?search=^&collection=china&look=default&start=`0
+%</b
+[检索更
+
+http://www.sina.com.cn/
+Sina / 新浪网
+Chinese
+http://search.sina.com.cn/cgi-bin/altavista/searchaltavista.pl?_searchkey=^&search=Go&lan=ch&pageno=`
+. </
+</i>
+
+http://www.cseek.com/
+Cseek / 搜索客
+Chinese
+http://www.cseek.com/cgi/srchengine.cgi?searchkey=^&page=1&sortby=1&all=yes
+. <a
+BR>`
+
+http://www.chinaok.com/
+ChinaOK / 华好网景
+Chinese
+http://202.98.99.245/search/search.asp?search_word=^&begin_item=`0
+<li>
+/li>
+
+http://www.dreamer.com.cn/
+Dreamer / 梦想家
+Chinese
+http://engine.dreamer.com.cn:9090/index.cgi?Target=SS&SWord=^&Type=N&p=`
+.</b
+/ul>
