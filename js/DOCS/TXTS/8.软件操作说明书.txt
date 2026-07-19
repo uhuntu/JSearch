@@ -1,0 +1,55 @@
+软件操作说明书
+
+一、JSearch.html的设置，样例如下：
+	<HTML>
+	<HEAD>
+	<TITLE>JSearch 2.0.0.0 - [huntlin@public.xm.fj.cn]</TITLE>
+	</HEAD>
+	<BODY>
+	<OBJECT CABBASE=JSearch.cab CODE=JSApplet.class WIDTH=758 HEIGHT=403>
+	    <PARAM NAME="currUrl"       VALUE="file:///D:/DevSofts/JSearch/Releases/">
+	    <PARAM NAME="smcCh"         VALUE="10">
+	    <PARAM NAME="smlCh"         VALUE="10">
+	    <PARAM NAME="valurlCh"      VALUE="No">
+	    <PARAM NAME="languageCh"    VALUE="Chinese">
+	    <PARAM NAME="webBrowCh"     VALUE="IE (Windows)">
+	    <PARAM NAME="webBrowPTf"    VALUE="c:\progra~1\intern~1\iexplore.exe">
+	</OBJECT>
+	</BODY>
+	</HTML>
+	*注意：
+	currUrl参数务必设置正确！否则将无法正确读取搜索引擎JSEngines.txt的信息。如：
+	a. JSearch的Release被拷贝到C:\JSearch目录下，则应设为：
+	    <PARAM NAME="currUrl"       VALUE="file:///C:/JSearch/">，最后的一个“/”不可省，file:后为三个“/”，即“///”。
+	b. JSearch被放置在某网站的目录下，如www.wlzx.com/JSearch/，则应设为：
+	    <PARAM NAME="currUrl"       VALUE="http://www.wlzx.com/JSearch/">，最后的一个“/”不可省。
+	
+	
+二、界面使用说明：
+
+	进入时，对“安全设置警告”请按“是”继续，方可获得对网络的访问的权限。
+	
+	搜索区域：
+		查询内容框：输入待查询的内容。
+		开始搜索：开始搜索。
+		停止搜索：停止搜索
+		新建搜索：新建搜索
+	结果区域：
+		结果栏：显示所有搜索到的主题和网址，并且当用户选中其中一条时可以在预览区域看到该网址的预览。双击结果条目，可用浏览器打开该网址进行浏览。
+		总计：显示搜索到的网址的总条数。
+	预览-状态-消息区域：
+		预览：显示结果网址预览
+		状态：显示搜索状态，如每个搜索引擎当前的搜索状况，如每个搜索引擎已经返回了多少网址。
+		消息：主要用于出错信息的显示
+	引擎&选项&关于区域：
+		引擎：供用户选择用于搜索的搜索引擎类别和想要的搜索引擎。
+		选项：供用户对搜索性能和软件特性进行定制。选项如下：
+			搜索最大连接数：能同时搜索的搜索引擎数
+			搜索最大层次：希望搜索的最大层次，即翻页
+			网址有效性验证：是否对所得网址进行连通测试后才显示
+			语言：选择语言（中/英）
+			网络浏览器种类：多种平台的网络浏览器的选择
+			网络浏览器路径：浏览器在操作系统中所在的路径
+		关于：
+			许可协议：显示COPYING.TXT
+			谢启：显示CREDITS.TXT

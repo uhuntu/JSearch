@@ -1,0 +1,171 @@
+软件设计概要说明书
+
+1.	引言
+
+1.1	编写目的
+	为软件确立基本结构/模块，为更好地进行详细设计/编码/测试做好准备。
+
+1.2	背景
+	无
+
+1.3	定义
+	a. 数据设计
+	b. 体系结构设计
+	c. 过程设计
+
+1.4	参考资料
+	《软件工程》，电子工业出版社。
+
+2.	总体设计
+
+2.1	需求规定
+	见《软件需求分析规格说明书》
+
+2.2	运行环境
+	JVM
+
+2.3	基本设计概念和处理流程
+	按照面向对象的方法对软件进行OOA/OOD/OOP。步骤如下：
+	（1）确定对象
+	（2）确定结构
+	（3）定义主题
+	（4）定义属性和实例联系
+	（5）定义操作和消息联系
+
+2.4	结构
+	软件共有两个主要模块：
+	a. 界面模块（JSApplet）：
+	b. 核心搜索模块（SearchThread）：
+
+2.5	功能需求与程序（模块）的关系
+	a. 界面模块（JSApplet）：
+		用于人机交互。所有的界面显示。所有的用户操作及软件对用户操作的响应主要在这上面进行。
+		用于存放全局变量。在这里全局变量作为通讯的一种重要手段，因为在这里使用的是Applet，所以所有的全局变量其实可以看作是Applet上的一个对象供其它对象直接存储。
+	b. 核心搜索模块（SearchThread）：
+		用于与Internet通信的接口。
+		JSApplet信息的来源。		
+
+2.6	人工处理过程
+	无
+
+2.7	尚未解决的问题
+	为实现如JSearch 1.2.3中更丰富的功能，如：
+		网址有效性验证使用单独的模块，并实施超时自动断开。
+		搜索超时自动断开。
+
+3.	接口设计
+
+3.1	用户接口
+	界面模块由如下方面组成：
+	搜索区域：
+		查询内容框：输入待查询的内容。
+		开始搜索：开始搜索。
+		停止搜索：停止搜索
+		新建搜索：新建搜索
+	结果区域：
+		结果栏：显示所有搜索到的主题和网址，并且当用户选中其中一条时可以在预览区域看到该网址的预览。双击结果条目，可用浏览器打开该网址进行浏览。
+		总计：显示搜索到的网址的总条数。
+	预览-状态-消息区域：
+		预览：显示结果网址预览
+		状态：显示搜索状态，如每个搜索引擎当前的搜索状况，如每个搜索引擎已经返回了多少网址。
+		消息：主要用于出错信息的显示
+	引擎&选项&关于区域：
+		引擎：供用户选择用于搜索的搜索引擎类别和想要的搜索引擎。
+		选项：供用户对搜索性能和软件特性进行定制。选项如下：
+			搜索最大连接数：能同时搜索的搜索引擎数
+			搜索最大层次：希望搜索的最大层次，即翻页
+			网址有效性验证：是否对所得网址进行连通测试后才显示
+			语言：选择语言（中/英）
+			网络浏览器种类：多种平台的网络浏览器的选择
+			网络浏览器路径：浏览器在操作系统中所在的路径
+		关于：
+			许可协议：显示COPYING.TXT
+			谢启：显示CREDITS.TXT
+
+3.2	外部接口
+	在JSearch.html中的PARAM设置，主要用于为JSApplet的OPTIONS区域设置初值，样例如下：
+	    <PARAM NAME="currUrl"       VALUE="file:///D:/DevSofts/JSearch/Releases/">
+	    <PARAM NAME="smcCh"         VALUE="10">
+	    <PARAM NAME="smlCh"         VALUE="10">
+	    <PARAM NAME="valurlCh"      VALUE="No">
+	    <PARAM NAME="languageCh"    VALUE="Chinese">
+	    <PARAM NAME="webBrowCh"     VALUE="IE (Windows)">
+	    <PARAM NAME="webBrowPTf"    VALUE="c:\progra~1\intern~1\iexplore.exe">
+
+3.3	内部接口
+	当用户按下开始搜索时，JSApplet通过创建多个SearchThread对象实现对多个搜索引擎的搜索
+
+4.	运行设计
+
+4.1	运行模块组合
+	无
+
+4.2	运行控制
+	无
+
+4.3	运行时间
+	无
+
+5.	系统数据结构设计
+
+5.1	逻辑结构设计要点
+	主要的数据结构如下：
+	//搜索引擎详细信息
+	class EnginesDetails {
+		String name;		//搜索引擎名称
+		String category;	//搜索引擎类别
+		String srchChain;	//搜索串
+		String srchBlkB;  	//信息块开始
+		String srchBlkE;  	//信息块结束
+	}
+	
+	//搜索结果详细信息
+	class ResultsDetails {
+		String	title;		//主题		
+		String	preview;	//预览
+	}
+	
+5.2	物理结构设计要点
+	无
+	
+5.3	数据结构与程序（模块）的关系
+	//公共全局量/JSApplet对外的接口
+	Hashtable resultTable 	//结果集，包括网址、{主题、预览}，通过网址进行定位
+	Vector    resultIndex	//结果集，仅包括网址，但可以快速使用elementAt(int)进行定位，并确定网址
+	boolean	 _stop			//用标志让线程结束，而不是用stop()！
+	int actualSearchAllowed	//实际应打开的线程数，并用于SearchThread的计数器
+	
+6.	系统出错处理设计
+
+6.1	出错信息
+	a. 当用户没有输入搜索串，或没有选择搜引擎，将显示如下信息：
+		Search Starting Failed.
+	b. 当浏览器无法打开搜索结果进行显示的时候：
+		"Exception: '" + ex.toString() + "' in JSApplet.ResultLiAL.actionPerformed().\n"
+	c. 开始时加入：
+		在消息框中：
+		"JSearch version 2.0.0.0 [huntlin@public.xm.fj.cn], Copyright (C) 1999-2002 Hunt Lin\n" +
+		"JSearch comes with ABSOLUTELY NO WARRANTY; for details see COPYING.\n" +
+		"This is free software, and you are welcome to redistribute it\n" +
+		"under certain conditions; see COPYING for details.\n"
+		在版权框中：
+		getParameter("currUrl") + "COPYING.TXT" + "\n"
+		getParameter("currUrl") + "CREDITS.TXT" + "\n"
+	d. 当读入搜索引擎信息时出错：
+		"Exception: '" + ex.toString() + "' in JSApplet.getEngData().\n"
+	e. 当启动搜索出错时：
+		"Exception: '" + ex.toString() + "' in JSApplet.startSearch().\n"
+	f. 当读取页面字符时出错：
+		"Exception: '" + ex.toString() + "' in SearchThread.stepOneChar().\n"
+	g. 当搜索线程出错：
+		"Exception: '" + ex.toString() + "' in SearchThread.run().\n"
+	h. 当验证网址出错：
+		"Exception: '" + ex.toString() + "' in SearchThread.validUrl().\n"
+	i. 当结束SearchThread对象时：
+		"Exception: '" + ex.toString() + "' in SearchThread.finalize().\n"
+	
+6.2	补救措施
+	无
+	
+6.3	系统维护设计
+	无

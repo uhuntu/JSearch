@@ -1,0 +1,13 @@
+Microsoft Visual Studio Solution File, Format Version 1.00
+Project("{66355F20-A65B-11D0-BFB5-00A0C91EBFA0}") = "JSearch", "JSearch.vjp", "{47988520-F977-11D5-9BF9-0000B48AD3FD}"
+EndProject
+Global
+	GlobalSection(LocalDeployment) = postSolution
+		StartupProject = {47988520-F977-11D5-9BF9-0000B48AD3FD}
+	EndGlobalSection
+	GlobalSection(BuildOrder) = postSolution
+		0 = {47988520-F977-11D5-9BF9-0000B48AD3FD}
+	EndGlobalSection
+	GlobalSection(DeploymentRoot) = postSolution
+	EndGlobalSection
+EndGlobal

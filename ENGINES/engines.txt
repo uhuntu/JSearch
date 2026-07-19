@@ -1,0 +1,10 @@
+Chinese:
+
+http://www.google.com/search?q=西二在线&lr=lang_zh-CN&start=10&sa=N
+
+http://www1.baidu.com/baidu?word=西二在线&rn=10&cl=3&pn=10&tn=baidu
+
+English:
+http://www.google.com/search?q=java&start=10&sa=N
+
+http://search.lycos.com/main/default.asp?lpv=1&query=java&first=11&page=more&ca=w&cl=fwc&gi=1
