@@ -1,0 +1,39 @@
+#This is at least a partial credits-file of people that have
+#contributed to the JSearch project.It is sorted by name and
+#formatted to allow easy grepping and beautification by
+#scripts.  The fields are: name (N), email (E), web-address
+#(W), description (D), and country (C).
+#Thanks,
+#
+#     Hunt
+----------
+
+N: Hunt Lin
+E: huntlin@public.xm.fj.cn
+W: http://hzsoft.easthome.net
+D: Original JSearch hacker
+C: China
+
+N: Ghost Guan
+E: gzwang@263.net
+W: bookmarks.126.com
+D: Proponent
+C: China
+
+N: Leith Wang
+E: wfg@163.net
+W: 
+D: Proponent
+C: China
+
+N: Zhu Yukun
+E: zyknet@263.net
+W: 
+D: Proponent
+C: China
+
+N: Zhao Yong
+E: wuya_fj@sina.com
+W: 
+D: Proponent
+C: China

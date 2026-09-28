@@ -1,0 +1,10 @@
+# Visual J++ / Visual Studio per-user state.
+# Binary, machine-specific, changes on every open. The original 2000 author
+# already ignored these (see versions/2000-08/.gitignore).
+*.suo
+
+# MS Visual SourceSafe integration leftovers.
+vssver.scc
+
+# Local scratch and build output.
+*.class.orig
