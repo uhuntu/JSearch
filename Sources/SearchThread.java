@@ -32,6 +32,13 @@ public class SearchThread extends Thread {
 	 */
 	static final Object resultLock = new Object();
 
+	/*
+	 * 活动连接计数器的锁。
+	 * 与 resultLock 分开：showResult() 只涉及结果集，这里只涉及计数，
+	 * 两者不会嵌套获取，所以不会引入锁顺序问题。
+	 */
+	static final Object searchCountLock = new Object();
+
 	//要搜索的内容
 	String srchChainConverted;
 	//当前搜索线程的序号
@@ -99,9 +106,14 @@ public class SearchThread extends Thread {
 		}
 		
 		//将活动连接减一，并适时地置按钮的状态。
-		if (--JSApplet.actualSearchAllowed == 0) {
-			JSApplet.buttonStatus(2);
-			JSApplet._stop = true;
+		//减量与判断必须原子：多个搜索线程退出时会同时执行，
+		//若两个线程读到同一个旧值，最后一个可能看不到 0，
+		//buttonStatus(2) 就不会被调用，界面会一直停在"搜索中"。
+		synchronized (searchCountLock) {
+			if (--JSApplet.actualSearchAllowed == 0) {
+				JSApplet.buttonStatus(2);
+				JSApplet._stop = true;
+			}
 		}
 	}
 	
