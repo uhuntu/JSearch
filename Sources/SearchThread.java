@@ -24,6 +24,14 @@ import java.net.*;
 
 public class SearchThread extends Thread {
 
+	/*
+	 * 公共结果集的锁。
+	 * 必须所有 SearchThread 实例锁同一个对象才能真正互斥。
+	 * synchronized 的实例方法锁的是 this，而每个搜索线程是不同的实例，
+	 * 所以线程之间根本不会互斥。
+	 */
+	static final Object resultLock = new Object();
+
 	//要搜索的内容
 	String srchChainConverted;
 	//当前搜索线程的序号
@@ -202,28 +210,30 @@ public class SearchThread extends Thread {
 		return fmtStr;
 	}
 	
-	//显示结果信息，各线程要互斥/同步，所以需要将临界区的内容放入一个过程中（synchronized）
-	synchronized void showResult() {
-//		synchronized (JSApplet.resultTable) {synchronized (JSApplet.resultIndex) {synchronized (JSApplet.resultLi) {synchronized (JSApplet.statusLi) {synchronized (JSApplet.totalNumLa) {
+	//显示结果信息。
+	//各线程要互斥，必须锁同一个共享对象；原来的 synchronized 实例方法锁的是 this，对线程间无效。
+	//整个临界区（检查、写入、更新界面）放在同一个 synchronized 块里，避免检查-行为被拆开。
+	void showResult() {
+		synchronized (resultLock) {
 			if (!JSApplet.resultTable.containsKey(resultDtlHead) && !JSApplet.resultIndex.contains(resultDtlHead)) {
 				
-				//一定要新建一个才能放进HashTable中！
-				ResultsDetails resultDtlBody	= new ResultsDetails();
-				resultDtlBody.title				= this.resultDtlBody.title;
-				resultDtlBody.preview			= this.resultDtlBody.preview;
+					//一定要新建一个才能放进HashTable中！
+					ResultsDetails resultDtlBody	= new ResultsDetails();
+					resultDtlBody.title				= this.resultDtlBody.title;
+					resultDtlBody.preview			= this.resultDtlBody.preview;
 				
-				//将结果放入JSApplet的resultTable/resultIndex中共用。
-				JSApplet.resultTable.put(resultDtlHead, resultDtlBody);	//必须要用独立的resultDtlBody对象才能放入HashTable
-				JSApplet.resultIndex.addElement(resultDtlHead);
+					//将结果放入JSApplet的resultTable/resultIndex中共用。
+					JSApplet.resultTable.put(resultDtlHead, resultDtlBody);	//必须要用独立的resultDtlBody对象才能放入HashTable
+					JSApplet.resultIndex.addElement(resultDtlHead);
 								
-				//将结果显示于JSApplet中，要对所得结果用formatString进行必要的格式化。
-				JSApplet.resultLi.add(formatString(resultDtlBody.title, 42) + " | " + formatString(resultDtlHead, 40) + " | from: " + srchEngName);
-				JSApplet.totalNumLa.setText(String.valueOf(Integer.valueOf(JSApplet.totalNumLa.getText()).intValue() + 1));
+					//将结果显示于JSApplet中，要对所得结果用formatString进行必要的格式化。
+					JSApplet.resultLi.add(formatString(resultDtlBody.title, 42) + " | " + formatString(resultDtlHead, 40) + " | from: " + srchEngName);
+					JSApplet.totalNumLa.setText(String.valueOf(Integer.valueOf(JSApplet.totalNumLa.getText()).intValue() + 1));
 								
-				//在STATUS中显示当前搜索状况
-				JSApplet.statusLi.replaceItem("Results:" + String.valueOf(++resultCount) + " From:" + srchEngName + " Received.", srchNo);
+					//在STATUS中显示当前搜索状况
+					JSApplet.statusLi.replaceItem("Results:" + String.valueOf(++resultCount) + " From:" + srchEngName + " Received.", srchNo);
 			}
-//		}}}}}
+		}
 	}
 	
 	//析构函数
