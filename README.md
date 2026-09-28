@@ -192,8 +192,29 @@ What actually remains:
 
 `Hashtable` and `Vector` methods are internally synchronized in pre-JDK5 Java,
 so container *integrity* survives; the damage is logical races. A correct fix
-would be a single private static lock object covering the check-then-act
-sequence *and* the AWT updates, ideally performed via `SwingUtilities.invokeLater`.
+would be a single static lock object covering the check-then-act sequence *and*
+the AWT updates, the latter released to `EventQueue.invokeLater` (AWT, not
+Swing — these are `java.awt` components, so `SwingUtilities` is the wrong API).
+
+**A fix exists, deliberately unmerged.** Branch `fix/showresult-locking`
+(heads `9d3732d`) fixes the result-collection races: a shared static
+`resultLock` replacing the per-instance lock, and a second static
+`searchCountLock` making the `actualSearchAllowed` decrement atomic. Both
+critical sections cover the check-then-act *and* the AWT updates together.
+Verified by compiling on JDK 8 (`-encoding GBK`) and reading the resulting
+bytecode — `getstatic resultLock / monitorenter` before the `containsKey`
+probe, and `monitorenter` around the decrement with a `monitorexit` on the
+exception path.
+
+It is **not** merged into `main`. `main` is meant to stay a byte-faithful
+archive of the March 2002 source, and nothing in this repository can run —
+see below — so the fix has no consumer and the merge would only cost the
+archive its fidelity. The branch is kept so the diagnosis stays attached to
+the code instead of living in a commit message nobody reads.
+
+The off-EDT AWT calls are **not** fixed there: the lock makes those updates
+safe from each other, not from AWT's own single-thread rule, and moving them
+to `invokeLater` would change the order results appear on screen.
 
 ---
 
