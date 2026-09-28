@@ -70,12 +70,12 @@ The original directory was left untouched.
 ```
 README.md                    this file
 .gitignore
-Sources/                     LIVE source, v2.0.0.0, Mar 2002  <-- the interesting thing
-  JSApplet.java                applet shell, UI, threading
-  SearchThread.java            the actual worker
+Sources/                     v2.0.0.0 source, Mar 2002, + 2 race fixes  <-- the thing
+  JSApplet.java                applet shell, UI, threading (as authored)
+  SearchThread.java            the actual worker (+ the two fixes below)
   JSearch.sln / .sln / .vjp    Visual J++ 6.0 project files
   codebase.dat                 applet classpath config (dead path, see below)
-Releases/                    LIVE release, JSearch.cab + JSearch.html + JSEngines.txt
+Releases/                    release as shipped, JSearch.cab + JSearch.html + JSEngines.txt
 ENGINES/                     hand-written engine notes + saved HTML snapshots
 docs/                        GB8567-88 documentation set, Jan 2002 (8 .doc + txt/ text copies)
 refs/                        GB8567-88 standard archive, 使用说明书, related material
@@ -196,25 +196,25 @@ would be a single static lock object covering the check-then-act sequence *and*
 the AWT updates, the latter released to `EventQueue.invokeLater` (AWT, not
 Swing — these are `java.awt` components, so `SwingUtilities` is the wrong API).
 
-**A fix exists, deliberately unmerged.** Branch `fix/showresult-locking`
-(heads `9d3732d`) fixes the result-collection races: a shared static
-`resultLock` replacing the per-instance lock, and a second static
-`searchCountLock` making the `actualSearchAllowed` decrement atomic. Both
-critical sections cover the check-then-act *and* the AWT updates together.
-Verified by compiling on JDK 8 (`-encoding GBK`) and reading the resulting
-bytecode — `getstatic resultLock / monitorenter` before the `containsKey`
-probe, and `monitorenter` around the decrement with a `monitorexit` on the
-exception path.
+**Fixed, and merged.** Branch `fix/showresult-locking` (heads `9d3732d`, now
+merged into `main` via `6672db6`) repairs the result-collection races: a shared
+static `resultLock` replacing the per-instance lock that never contended
+between threads, and a second static `searchCountLock` making the
+`actualSearchAllowed` decrement atomic. Both critical sections cover the
+check-then-act *and* the AWT updates together. Verified by compiling on JDK 8
+(`-encoding GBK`) and reading the resulting bytecode — `getstatic resultLock /
+monitorenter` before the `containsKey` probe, and `monitorenter` around the
+decrement with a `monitorexit` on the exception path.
 
-It is **not** merged into `main`. `main` is meant to stay a byte-faithful
-archive of the March 2002 source, and nothing in this repository can run —
-see below — so the fix has no consumer and the merge would only cost the
-archive its fidelity. The branch is kept so the diagnosis stays attached to
-the code instead of living in a commit message nobody reads.
+The merge is a no-ff merge, so the two fixes stay a named, reviewable unit in
+history rather than being flattened into `main`'s line. It was merged because
+two verified fixes are worth more than a symbolically pure snapshot, and
+because nothing was lost by doing so — see Provenance for where the original
+bytes live.
 
-The off-EDT AWT calls are **not** fixed there: the lock makes those updates
-safe from each other, not from AWT's own single-thread rule, and moving them
-to `invokeLater` would change the order results appear on screen.
+The off-EDT AWT calls are **not** fixed: the lock makes those updates safe from
+each other, not from AWT's own single-thread rule, and moving them to
+`invokeLater` would change the order results appear on screen.
 
 ---
 
@@ -269,6 +269,19 @@ directories. The pre-reorganization state is preserved as git tag
 at reorganization time is `../JSearch-archive-backup.tar.gz`
 (sha256 `0a53d185253854008b243f24d990d4b229eb22aefc29f50144e526b3cfc6cabe`).
 
-Files were moved, never edited. GBK-encoded content is byte-identical to the
-original; the 16 documentation files removed from `versions/2002-01/DOCS/` were
-verified byte-identical to those already present in `docs/` before removal.
+Files were moved, never edited — with one deliberate exception. The 16
+documentation files removed from `versions/2002-01/DOCS/` were verified
+byte-identical to those already present in `docs/` before removal, and all
+GBK-encoded content is otherwise byte-identical to the original.
+
+**The exception:** `Sources/SearchThread.java` has been modified twice since,
+fixing the two races described under "The deadlock patch does not work" — a
+shared static `resultLock`, and an atomic `actualSearchAllowed` decrement under
+a second static lock. Both are compiled and bytecode-verified on JDK 8, and
+neither alters behaviour on any path that can execute today, so the change is a
+correctness improvement rather than a resurrection.
+
+The unaffected March 2002 bytes remain available in git regardless:
+`bca88b3:Sources/SearchThread.java` still resolves to the original blob, as
+does the pre-restructure tag above. Every other file in this tree, including
+all of `versions/`, is untouched.
