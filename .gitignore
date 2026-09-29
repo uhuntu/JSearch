@@ -8,3 +8,6 @@ vssver.scc
 
 # Local scratch and build output.
 *.class.orig
+
+# modern/ build output
+modern/out/
