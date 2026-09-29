@@ -58,6 +58,42 @@ January 2002, then patched again in March 2002. `Sources/JSApplet.java` is
 byte-identical to `versions/2002-01/Sources/JSApplet.java`; only
 `SearchThread.java` changed between January and March.
 
+### These are four versions of **one** program, not two
+
+This is the first thing the table above gets wrong if you read it naively. The
+`JSApplet` directory from 2000 is **not a separate application** that happened to
+share a name, and `JSearch` is not a superset that absorbed it. Both directories
+are the same codebase at different points in its life.
+
+The main class never got renamed:
+
+```
+versions/2000-08/JSApplet.java               public class JSApplet extends Applet
+versions/2001-12/JSApplet/JSApplet.java      public class JSApplet extends Applet
+versions/2002-01/Sources/JSApplet.java       public class JSApplet extends Applet
+Sources/JSApplet.java                        public class JSApplet extends Applet
+```
+
+`JSApplet` is the name of the class, not of a component. It was chosen when the
+code was purely an applet, and it survived the rename untouched. The product
+itself was called **JSearch from the beginning** — the first comment line of the
+2000 source already reads *"JSearch - turns search Engines into FIND engines"*,
+with version `1.2.3`.
+
+The shipped 2002 release therefore carries both names at once:
+
+```html
+<TITLE>JSearch 2.0.0.0 - [huntlin@public.xm.fj.cn]</TITLE>
+<OBJECT CABBASE=JSearch.cab CODE=JSApplet.class WIDTH=758 HEIGHT=403>
+```
+
+`JSearch.cab`, `JSearch 2.0.0.0` — deploying a class file named `JSApplet.class`.
+The rename changed the project, the cabinet, the title and the version string,
+but not the class. So when this archive says "`JSApplet`", it means the 2000-era
+directory name and the class name; when it says "`JSearch`", it means the project
+and product name. Same program throughout.
+
+
 `versions/2000-08/` was previously stored *outside* this repository as
 `../JSApplet/` (a separate git repo, one commit `02692df`, pushed to
 `github.com/uhuntu/JSApplet`). It has been copied in because losing it would
