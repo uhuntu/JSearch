@@ -59,9 +59,14 @@ byte-identical to `versions/2002-01/Sources/JSApplet.java`; only
 `SearchThread.java` changed between January and March.
 
 `versions/2000-08/` was previously stored *outside* this repository as
-`../JSApplet/` (a separate git repo). It has been copied in because losing it
-would lose the 1.2.3 baseline and make the whole comparison unreproducible.
-The original directory was left untouched.
+`../JSApplet/` (a separate git repo, one commit `02692df`, pushed to
+`github.com/uhuntu/JSApplet`). It has been copied in because losing it would
+lose the 1.2.3 baseline and make the whole comparison unreproducible.
+
+The original directory was deleted on 2026-09-28 after that copy was verified
+byte-identical, since by then it existed in three independent places: this
+repository, the `uhuntu/JSApplet` remote, and the tar backup described under
+Provenance. Deleting it removed a duplicate from `work/`, not the last copy.
 
 ---
 
