@@ -68,6 +68,19 @@ byte-identical, since by then it existed in three independent places: this
 repository, the `uhuntu/JSApplet` remote, and the tar backup described under
 Provenance. Deleting it removed a duplicate from `work/`, not the last copy.
 
+Its single git commit, `02692df`, has since been fetched back into this
+repository's object database and tagged **`v1.2.3-baseline`**, so the 2000-era
+snapshot has a durable local git object rather than depending on the remote.
+Worth knowing what that commit is: it is a **2026 snapshot** of the 2000 source,
+not a 24-year development history — that repo was `git init`'d on 2026-07-19, the
+same afternoon as `JSearch`'s own initial commit `a664f23`. There is no deeper
+history to recover in either repository.
+
+`versions/2000-08/` is a **superset** of that commit's tree: 35 files against 33.
+The two extras, `JSApplet.suo` and `vssver.scc`, were excluded from the commit
+by that repo's own `.gitignore`. All 33 shared files are byte-identical. So the
+archived copy is the more complete of the two; the commit's unique value is
+being a named, reachable object.
 ---
 
 ## Directory layout
