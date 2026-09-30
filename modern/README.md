@@ -19,6 +19,22 @@ javac -encoding UTF-8 -d out $(find src/main/java -name '*.java')
 java  -Dfile.encoding=UTF-8 -cp out jsearch.Demo
 ```
 
+## Tests
+
+```sh
+./run-tests.sh      # 18 tests, plain JDK, no JUnit or build tool needed
+```
+
+They cover engine parsing (shared URLs, duplicate identity, truncated/empty/CRLF
+input), URL building, the scraper (document order, markers shorter than four
+characters, truncated pages terminate), `ResultCollector` dedup under 8 threads,
+and `SearchService` (cross-engine dedup, one failing engine not sinking the rest,
+`cancel(true)` interrupting a blocked fetch).
+
+Writing them found one real bug: `ResultCollector` had an error listener field
+and `fireError()` but no way to register a listener, so every engine failure was
+silently dropped. `onError(Consumer)` now exists.
+
 ## What it demonstrates
 
 The three properties the original design got wrong:
@@ -76,8 +92,9 @@ removes the constraint instead of working around it.
   of work and the least interesting to read about.
 - No network `PageFetcher`. Swapping the canned one for `URL::openStream` is a few
   lines; keeping it out means `Demo` runs offline and the scraper stays testable.
-- No tests, though `BlockScraper` and `EngineRepository` are shaped to be tested
-  with string fixtures — which is the point of extracting them.
+- No tests against the real captured pages in `../ENGINES/*.html`. Those are
+  GBK and their block markers aren't recorded in a machine-readable form, so the
+  tests use small inline fixtures instead.
 
 ## Honest scope
 

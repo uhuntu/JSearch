@@ -91,6 +91,10 @@ public final class ResultCollector {
         this.onComplete = listener;
     }
 
+    public void onError(Consumer<Throwable> listener) {
+        this.onError = listener;
+    }
+
     /** Called by the search service when an engine task fails. */
     public void fireError(Throwable cause) {
         onError.accept(cause);
