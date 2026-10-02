@@ -23,6 +23,7 @@ public final class Tests {
     }
 
     private static int passed;
+    private static int skipped;
     private static final List<String> failures = new ArrayList<>();
 
     public static void main(String[] args) {
@@ -43,6 +44,7 @@ public final class Tests {
         test("markers shorter than four characters match", Tests::shortMarkersMatch);
         test("page with no blocks yields empty list", Tests::noBlocksIsEmpty);
         test("truncated block terminates and does not throw", Tests::truncatedBlockTerminates);
+        test("end marker inside a tag is not skipped", Tests::endMarkerInsideTag);
 
         // ResultCollector
         test("dedup by URL", Tests::collectorDedups);
@@ -54,8 +56,19 @@ public final class Tests {
         test("one failing engine does not sink the others", Tests::serviceIsolatesFailure);
         test("cancel interrupts a blocked fetch", Tests::serviceCancelInterrupts);
 
+        // The archive's own captured pages, as fixtures
+        testArchive("shipped engine file yields three engines, not two", Tests::shippedEnginesSurvive);
+        testArchive("shipped markers are the ones the analysis documents", Tests::shippedMarkers);
+        testArchive("google_en.html yields the ten results in page order", Tests::googleEnPage);
+        testArchive("the shipped markers also catch the pager", Tests::pagerIsScraped);
+        testArchive("google_cn.html decodes as GBK, not mojibake", Tests::gbkDecodes);
+        testArchive("baidu_cn.html yields all ten results", Tests::baiduPage);
+        testArchive("baidu's end marker only ever appears inside a tag", Tests::baiduMarkerOnlyInTag);
+        testArchive("lycos_en.html was captured but never shipped", Tests::lycosOrphaned);
+
         System.out.println();
-        System.out.println(passed + " passed, " + failures.size() + " failed");
+        System.out.println(passed + " passed, " + failures.size() + " failed"
+                + (skipped == 0 ? "" : ", " + skipped + " skipped"));
         failures.forEach(f -> System.out.println("  FAIL " + f));
         System.exit(failures.isEmpty() ? 0 : 1);
     }
@@ -174,6 +187,127 @@ public final class Tests {
             final String page = html;
             assertCompletesWithin(2000, () -> SCRAPER.scrape(engine("<r>", "</r>"), page));
         }
+    }
+
+    private static void endMarkerInsideTag() {
+        // Baidu's shipped end marker "ble>" only ever occurs as part of
+        // "</table>". Stepping over a tag to its '>' loses it: block one then
+        // runs to the end of the page and the second block is never seen.
+        String html = "Xref=http://a>A</a>one</table>Xref=http://b>B</a>two</table>end";
+        List<SearchResult> results = SCRAPER.scrape(engine("X", "ble>"), html);
+        check(results.size() == 2, "expected 2, got " + results.size());
+        check(results.get(0).preview().equals("one"), results.get(0).preview());
+        check(results.get(1).url().equals("http://b"), results.get(1).url());
+        check(results.get(1).preview().equals("two"), results.get(1).preview());
+    }
+
+    // ---- Archive fixtures ------------------------------------------------
+
+    private static void shippedEnginesSurvive() {
+        List<Engine> engines = ArchiveFixtures.shippedEngines();
+        check(engines.size() == 3, "expected 3, got " + engines.size());
+        // The original keyed on the URL, and two of these three share one, so it
+        // loaded 2 from this very file.
+        check(ArchiveFixtures.shippedEngine("Google").category().equals("English"), "English Google");
+        check(ArchiveFixtures.shippedEngine("GB_Chinese").category().equals("Chinese"), "Chinese Google");
+        check(ArchiveFixtures.shippedEngine("Baidu").category().equals("Chinese"), "Baidu");
+    }
+
+    private static void shippedMarkers() {
+        Engine english = ArchiveFixtures.shippedEngine("Google");
+        Engine chinese = ArchiveFixtures.shippedEngine("GB_Chinese");
+        Engine baidu = ArchiveFixtures.shippedEngine("Baidu");
+        check(english.resultBlock().start().equals("<p><"), english.resultBlock().toString());
+        check(english.resultBlock().end().equals("k - "), english.resultBlock().toString());
+        check(chinese.resultBlock().start().equals("<p><"), chinese.resultBlock().toString());
+        check(chinese.resultBlock().end().equals("k - "), chinese.resultBlock().toString());
+        check(baidu.resultBlock().start().equals(".</d"), baidu.resultBlock().toString());
+        check(baidu.resultBlock().end().equals("ble>"), baidu.resultBlock().toString());
+    }
+
+    private static void googleEnPage() {
+        List<SearchResult> results = SCRAPER.scrape(
+                ArchiveFixtures.shippedEngine("Google"), ArchiveFixtures.page("google_en.html"));
+        check(results.size() == 11, "expected 11 (ten results + the pager), got " + results.size());
+        String[] urls = {
+            "http://sun.com/java/",
+            "http://java.apache.org/",
+            "http://www.java-pro.com/",
+            "http://javascript.internet.com/",
+            "http://www.microsoft.com/java/",
+            "http://developer.java.sun.com/developer/",
+            "http://www.javaarchives.com/",
+            "http://java.about.com/",
+            "http://www.ibiblio.org/javafaq/javafaq.html",
+            "http://www.anfyteam.com/",
+        };
+        for (int i = 0; i < urls.length; i++) {
+            check(results.get(i).url().equals(urls[i]), "result " + (i + 1) + ": " + results.get(i).url());
+            check(!results.get(i).title().isEmpty(), "result " + (i + 1) + " has no title");
+            check(!results.get(i).preview().isEmpty(), "result " + (i + 1) + " has no preview");
+        }
+    }
+
+    private static void pagerIsScraped() {
+        // "<p><" also matches the pagination table, so Google's "上一页" link is
+        // scraped as a result. Same markers, same algorithm, same false positive
+        // as the original: recorded here so the behaviour is known, not hidden.
+        List<SearchResult> results = SCRAPER.scrape(
+                ArchiveFixtures.shippedEngine("Google"), ArchiveFixtures.page("google_en.html"));
+        SearchResult last = results.get(results.size() - 1);
+        check(last.url().equals("/search?q=java&hl=zh-CN&start=0&sa=N"), last.url());
+        check(last.title().equals("上一页"), "pager title was " + last.title());
+    }
+
+    private static void gbkDecodes() {
+        List<SearchResult> results = SCRAPER.scrape(
+                ArchiveFixtures.shippedEngine("GB_Chinese"), ArchiveFixtures.page("google_cn.html"));
+        check(results.size() == 11, "expected 11, got " + results.size());
+        SearchResult first = results.get(0);
+        check(first.url().equals("http://search.gznet.com/dir/11/02/04/1.html"), first.url());
+        check(first.title().equals("广州视窗搜索引擎"),
+                "mojibake, i.e. the page was not decoded as GBK: " + first.title());
+        check(first.preview().contains("网上远程诊断与处理支持中心"), first.preview());
+        check(results.get(10).title().equals("上一页"), results.get(10).title());
+    }
+
+    private static void baiduPage() {
+        List<SearchResult> results = SCRAPER.scrape(
+                ArchiveFixtures.shippedEngine("Baidu"), ArchiveFixtures.page("baidu_cn.html"));
+        check(results.size() == 10, "expected 10, got " + results.size());
+        check(results.get(0).url().equals("http://bbs.lstc.edu.cn/~jingsh/chaojilianjie.htm"),
+                results.get(0).url());
+        check(results.get(0).title().equals("超级连接"), results.get(0).title());
+        for (SearchResult result : results) {
+            check(result.url().startsWith("http"), "no url: [" + result.url() + "]");
+            check(!result.title().isEmpty(), "no title for " + result.url());
+        }
+    }
+
+    private static void baiduMarkerOnlyInTag() {
+        // Evidence for readPreview(): every "ble>" in the Baidu page is the tail
+        // of "</table>", so a scraper that steps over tags can never end a block.
+        String html = ArchiveFixtures.page("baidu_cn.html");
+        check(count(html, "ble>") == count(html, "</table>"),
+                "ble> appears " + count(html, "ble>") + " times, </table> " + count(html, "</table>"));
+    }
+
+    private static void lycosOrphaned() {
+        // Four pages were captured; the shipped engine file defines three engines
+        // and none of them is Lycos, so this page has no markers at all.
+        for (Engine engine : ArchiveFixtures.shippedEngines()) {
+            check(!engine.urlTemplate().contains("lycos"), "Lycos was shipped after all: " + engine);
+        }
+    }
+
+    private static int count(String text, String needle) {
+        int n = 0;
+        int at = 0;
+        while ((at = text.indexOf(needle, at)) >= 0) {
+            n++;
+            at += needle.length();
+        }
+        return n;
     }
 
     // ---- ResultCollector -------------------------------------------------
@@ -315,6 +449,16 @@ public final class Tests {
             failures.add(name + ": " + t);
             System.out.println("  FAIL " + name + ": " + t);
         }
+    }
+
+    /** Runs a test that needs the archive's own files; skips if they are absent. */
+    private static void testArchive(String name, Body body) {
+        if (!ArchiveFixtures.available()) {
+            skipped++;
+            System.out.println("  skip " + name + " (" + ArchiveFixtures.unavailableReason() + ")");
+            return;
+        }
+        test(name, body);
     }
 
     private static void check(boolean condition, String message) {

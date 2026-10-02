@@ -22,18 +22,31 @@ java  -Dfile.encoding=UTF-8 -cp out jsearch.Demo
 ## Tests
 
 ```sh
-./run-tests.sh      # 18 tests, plain JDK, no JUnit or build tool needed
+./run-tests.sh      # 27 tests, plain JDK, no JUnit or build tool needed
 ```
 
 They cover engine parsing (shared URLs, duplicate identity, truncated/empty/CRLF
 input), URL building, the scraper (document order, markers shorter than four
-characters, truncated pages terminate), `ResultCollector` dedup under 8 threads,
-and `SearchService` (cross-engine dedup, one failing engine not sinking the rest,
-`cancel(true)` interrupting a blocked fetch).
+characters, markers inside tags, truncated pages terminate), `ResultCollector`
+dedup under 8 threads, and `SearchService` (cross-engine dedup, one failing
+engine not sinking the rest, `cancel(true)` interrupting a blocked fetch).
 
-Writing them found one real bug: `ResultCollector` had an error listener field
-and `fireError()` but no way to register a listener, so every engine failure was
-silently dropped. `onError(Consumer)` now exists.
+Nine of them run against **the archive's own files** — the four captured pages in
+`../ENGINES/` and the shipped `../Releases/JSEngines.txt` — read as GBK by
+`ArchiveFixtures`. They skip, rather than fail, when the archive is not next to
+this directory, so `modern/` still stands alone.
+
+Writing them found two real bugs:
+
+- `ResultCollector` had an error listener field and `fireError()` but no way to
+  register a listener, so every engine failure was silently dropped.
+  `onError(Consumer)` now exists.
+- `HtmlBlockScraper.readPreview()` stepped over a tag to its `>`, which meant an
+  end marker occurring *inside* a tag could never match. Baidu's shipped end
+  marker is `ble>`, and every one of its 24 occurrences in the captured page is
+  the tail of `</table>` — so the first Baidu block ran to the end of the page
+  and the other nine results were never seen. The original's character window
+  compared at every position, tags included, so it did match. Fixed.
 
 ## What it demonstrates
 
@@ -92,9 +105,34 @@ removes the constraint instead of working around it.
   of work and the least interesting to read about.
 - No network `PageFetcher`. Swapping the canned one for `URL::openStream` is a few
   lines; keeping it out means `Demo` runs offline and the scraper stays testable.
-- No tests against the real captured pages in `../ENGINES/*.html`. Those are
-  GBK and their block markers aren't recorded in a machine-readable form, so the
-  tests use small inline fixtures instead.
+
+## What the real pages showed
+
+Pointing the scraper at the four 2001 captures, with markers taken from the
+shipped `JSEngines.txt` rather than invented, turned up four things that no
+inline fixture could have:
+
+**Baidu's end marker is invisible to a scraper that skips tags.** `ble>` occurs
+24 times in `baidu_cn.html` and all 24 are inside `</table>`. Any implementation
+that jumps from `<` to `>` steps straight over it, and the page collapses into
+one result. The original compared its window at every character, so it did not
+have this problem — the port did, until the fixture caught it.
+
+**Google's start marker matches the pagination table too.** `<p><` matches the
+`<p><div class=n>` that opens the pager, so a Google page yields 11 results, not
+10: the eleventh is the "上一页" link, `/search?q=java&hl=zh-CN&start=0&sa=N`.
+That is what the original did as well — same markers, same algorithm — so it is
+asserted as known behaviour rather than fixed.
+
+**One of the four pages has no engine.** `lycos_en.html` was captured on
+2001-12-27 alongside the other three, but the shipped engine file defines only
+Chinese Google, Baidu and English Google. Nothing in it mentions Lycos, so the
+page has no markers and cannot be scraped by anything the release shipped.
+
+**The captured Google page is page 2, not page 1.** Its pager marks page 2 as
+current, so the ten results are results 11–20 for "java". The table in
+`../ANALYSIS.md` lists exactly these ten; its heading has been corrected to say
+so.
 
 ## Honest scope
 

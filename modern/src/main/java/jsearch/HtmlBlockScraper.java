@@ -20,6 +20,10 @@ import java.util.List;
  * whole page is available in memory here, matching is expressed as
  * "does the marker start at this position" instead of "does a 4-character window
  * equal this", which removes the constraint rather than working around it.
+ *
+ * <p>Markers are matched at every position, including inside a tag, which is what
+ * the original's window did and what the shipped Baidu data depends on: its end
+ * marker {@code ble>} only ever appears within {@code </table>}.
  */
 public final class HtmlBlockScraper implements BlockScraper {
 
@@ -110,10 +114,20 @@ public final class HtmlBlockScraper implements BlockScraper {
         StringBuilder preview = new StringBuilder();
         while (!cursor.matches(blockEnd)) {
             if (cursor.current() == '<') {
-                while (cursor.current() != '>') {
+                // Skip to the end of the tag, but never past an end marker that
+                // starts inside it. The shipped Baidu end marker is "ble>", and it
+                // only ever occurs as part of "</table>"; jumping straight to '>'
+                // stepped over it, so the first Baidu block ran to the end of the
+                // page and swallowed the other nine. The original's character
+                // window compared at every position, tags included, so it did see
+                // it — this is a regression in the port, fixed here.
+                while (cursor.current() != '>' && !cursor.matches(blockEnd)) {
                     if (!cursor.advance()) {
                         break;
                     }
+                }
+                if (cursor.matches(blockEnd)) {
+                    break;              // the marker starts inside this tag
                 }
             }
             if (cursor.current() != '>' && cursor.current() != '\r' && cursor.current() != '\n') {

@@ -195,7 +195,9 @@ a false match.
 built to parse — captured on 2001-12-27. Reading them is a snapshot of the Java
 ecosystem at peak enthusiasm.
 
-The top 10 results for "java" on Google (English), as Google saw them:
+The ten results on the captured page for "java" on Google (English), as Google
+saw them. The pager marks page 2 as current, so these are results 11&ndash;20, not
+the top ten:
 
 | # | Site | What it was |
 |---|---|---|
@@ -210,7 +212,7 @@ The top 10 results for "java" on Google (English), as Google saw them:
 | 9 | ibiblio.org/javafaq | comp.lang.java FAQ |
 | 10 | anfyteam.com | Java applets and screensavers |
 
-Three of the top ten point to sun.com subdomains. Microsoft had a Java page —
+Three of the ten point to sun.com subdomains. Microsoft had a Java page —
 "Technologies for Java" — before the DOJ settlement and the eventual removal of
 Microsoft's Java support from Windows. Anfy Team was selling Java applets and
 screensavers. The page reports "about 23,100,000 results" and this is page 2
@@ -229,6 +231,19 @@ something like `- 31k - `, so `k - ` is the trailing edge of the size/date
 fragment. The scraper would extract: URL from after `ref=` (matched inside
 `href=`), title from between the `<a>` tags, and preview from everything up to
 `k - `.
+
+That verification is now automated: `modern/` scrapes all four pages with the
+markers read out of the shipped `Releases/JSEngines.txt`. Two things it turned up
+are worth knowing before trusting the markers by eye:
+
+- **`<p><` also matches the pager.** Google's pagination table opens with
+  `<p><div class=n>`, so a page yields eleven results, the eleventh being the
+  "上一页" link. The original had the same false positive.
+- **Baidu's end marker `ble>` never occurs outside a tag.** All 24 occurrences in
+  `baidu_cn.html` are the tail of `</table>`, so an implementation that steps
+  from `<` to `>` never ends a Baidu block and the page collapses to one result.
+  The original's window compared at every character, inside tags included, so it
+  matched; a straightforward port does not.
 
 ---
 
