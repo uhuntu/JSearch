@@ -22,7 +22,7 @@ java  -Dfile.encoding=UTF-8 -cp out jsearch.Demo
 ## Tests
 
 ```sh
-./run-tests.sh      # 27 tests, plain JDK, no JUnit or build tool needed
+./run-tests.sh      # 35 tests, plain JDK, no JUnit or build tool needed
 ```
 
 They cover engine parsing (shared URLs, duplicate identity, truncated/empty/CRLF
@@ -103,8 +103,35 @@ removes the constraint instead of working around it.
 - No UI. The original's `JSApplet` was ~900 lines doing layout, HTTP, threading,
   state, i18n and browser launching at once. Untangling that is the largest piece
   of work and the least interesting to read about.
-- No network `PageFetcher`. Swapping the canned one for `URL::openStream` is a few
-  lines; keeping it out means `Demo` runs offline and the scraper stays testable.
+- No *scraping* network fetcher. `HttpPageFetcher` exists, but it is aimed at
+  search APIs (below); pointing it at the dead 2001 engines would only
+  re-create the fragility this design avoids.
+
+## Talking to a real search API
+
+`HttpPageFetcher` (JDK `java.net.http`, timeouts, per-URL-prefix headers so an
+API key is never sent to another host) plus `JsonApiScraper` (a `BlockScraper`
+for JSON, with `brave()` and `searxng()` presets and a ~150-line dependency-free
+`Json` reader) replace the HTML scraping for engines that offer an API. Nothing
+in `SearchService` changed: the seams were already there.
+
+```sh
+BRAVE_API_KEY=...  java -cp out jsearch.ApiDemo "your query"
+SEARXNG_URL=http://localhost:8080  java -cp out jsearch.ApiDemo "your query"
+```
+
+Notes:
+- A JSON engine's block markers are unused; give it a placeholder such as
+  `{`..`}` (the engine-file format needs six non-blank fields).
+- A `SearchService` takes one `BlockScraper`, so run one service per provider
+  shape (as `ApiDemo` does). Mixing HTML and JSON engines in one service would
+  need a scraper chosen per engine, which is not built.
+- SearXNG pages are 1-based and the level is 0-based, so use one level.
+- `cancel(true)` interrupts an in-flight HTTP request; a test proves it against
+  a local server.
+- The tests cover the fetcher (against a local `HttpServer`) and the JSON path
+  with fixtures. **Not verified against the live Brave or SearXNG services**:
+  the response shapes come from their documentation, and I had no key.
 
 ## What the real pages showed
 

@@ -56,6 +56,16 @@ public final class Tests {
         test("one failing engine does not sink the others", Tests::serviceIsolatesFailure);
         test("cancel interrupts a blocked fetch", Tests::serviceCancelInterrupts);
 
+        // JSON API path: Json, JsonApiScraper, HttpPageFetcher
+        test("brave-shaped JSON is scraped, tags stripped", Tests::braveJson);
+        test("searxng-shaped JSON is scraped", Tests::searxngJson);
+        test("JSON with no results yields empty list", Tests::jsonNoResults);
+        test("non-JSON body throws instead of returning nothing", Tests::jsonGarbageThrows);
+        test("JSON escapes and unicode decode", Tests::jsonEscapes);
+        test("http fetcher returns body and sends scoped headers", Tests::httpFetcherHeaders);
+        test("http fetcher rejects non-2xx", Tests::httpFetcherRejectsError);
+        test("cancel interrupts a real in-flight HTTP request", Tests::httpFetcherCancel);
+
         // The archive's own captured pages, as fixtures
         testArchive("shipped engine file yields three engines, not two", Tests::shippedEnginesSurvive);
         testArchive("shipped markers are the ones the analysis documents", Tests::shippedMarkers);
@@ -435,6 +445,123 @@ public final class Tests {
             service.awaitAll(futures, collector);   // cancelled is not an error; must not hang
         } finally {
             service.shutdown();
+        }
+    }
+
+    // ---- JSON API path ---------------------------------------------------
+
+    private static final Engine API = new Engine("Api", "API", "http://api/?q=^", new Engine.Block("{", "}"));
+
+    private static void braveJson() {
+        String body = "{\"web\":{\"results\":[{\"url\":\"http://a\",\"title\":\"A <strong>hit</strong>\","
+                + "\"description\":\"first\"},{\"title\":\"no url\"},{\"url\":\"http://b\",\"title\":\"B\"}]}}";
+        List<SearchResult> r = JsonApiScraper.brave().scrape(API, body);
+        check(r.size() == 2, "item without url must be skipped, got " + r.size());
+        check(r.get(0).title().equals("A hit"), "tags not stripped: " + r.get(0).title());
+        check(r.get(0).preview().equals("first"), "preview");
+        check(r.get(1).preview().isEmpty(), "missing description should be empty");
+    }
+
+    private static void searxngJson() {
+        String body = "{\"query\":\"q\",\"results\":[{\"url\":\"http://a\",\"title\":\"T\",\"content\":\"C\"}]}";
+        List<SearchResult> r = JsonApiScraper.searxng().scrape(API, body);
+        check(r.size() == 1 && r.get(0).preview().equals("C"), "searxng content field");
+    }
+
+    private static void jsonNoResults() {
+        check(JsonApiScraper.brave().scrape(API, "{}").isEmpty(), "{}");
+        check(JsonApiScraper.brave().scrape(API, "{\"web\":{}}").isEmpty(), "web without results");
+        check(JsonApiScraper.brave().scrape(API, "[]").isEmpty(), "array root");
+    }
+
+    private static void jsonGarbageThrows() {
+        expectThrows(IllegalArgumentException.class, () -> JsonApiScraper.brave().scrape(API, "<html>rate limited</html>"));
+        expectThrows(IllegalArgumentException.class, () -> JsonApiScraper.brave().scrape(API, "{\"web\":"));
+        expectThrows(IllegalArgumentException.class, () -> JsonApiScraper.brave().scrape(API, "{} extra"));
+    }
+
+    private static void jsonEscapes() {
+        Object v = Json.parse("{\"s\":\"a\\\"b\\n\\u4e2d\",\"n\":-1.5e2, \"t\":true, \"z\":null}");
+        java.util.Map<?, ?> m = (java.util.Map<?, ?>) v;
+        check(m.get("s").equals("a\"b\n中"),"string escapes: " + m.get("s"));
+        check(m.get("n").equals(-150.0), "number");
+        check(Boolean.TRUE.equals(m.get("t")) && m.containsKey("z") && m.get("z") == null, "literals");
+    }
+
+    private static com.sun.net.httpserver.HttpServer server(
+            com.sun.net.httpserver.HttpHandler handler) throws IOException {
+        com.sun.net.httpserver.HttpServer s = com.sun.net.httpserver.HttpServer.create(
+                new java.net.InetSocketAddress(java.net.InetAddress.getLoopbackAddress(), 0), 0);
+        s.createContext("/", handler);
+        s.start();
+        return s;
+    }
+
+    private static void reply(com.sun.net.httpserver.HttpExchange ex, int code, String body) throws IOException {
+        byte[] bytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        ex.sendResponseHeaders(code, bytes.length);
+        ex.getResponseBody().write(bytes);
+        ex.close();
+    }
+
+    private static void httpFetcherHeaders() throws Exception {
+        AtomicReference<String> seen = new AtomicReference<>();
+        com.sun.net.httpserver.HttpServer s = server(ex -> {
+            seen.set(ex.getRequestHeaders().getFirst("X-Token") + "|" + ex.getRequestURI().getRawQuery());
+            reply(ex, 200, "{\"ok\":\"中\"}");
+        });
+        try {
+            String base = "http://127.0.0.1:" + s.getAddress().getPort();
+            HttpPageFetcher f = new HttpPageFetcher().withHeader(base, "X-Token", "secret");
+            check(f.fetch(base + "/x?q=a%20b").contains("中"), "body must decode as UTF-8");
+            check(seen.get().equals("secret|q=a%20b"), "scoped header/query: " + seen.get());
+            // a different prefix must not receive the token
+            HttpPageFetcher other = new HttpPageFetcher().withHeader("http://elsewhere.invalid", "X-Token", "secret");
+            other.fetch(base + "/x");
+            check(seen.get().startsWith("null|"), "token leaked to unrelated URL: " + seen.get());
+        } finally {
+            s.stop(0);
+        }
+    }
+
+    private static void httpFetcherRejectsError() throws Exception {
+        com.sun.net.httpserver.HttpServer s = server(ex -> reply(ex, 429, "slow down"));
+        try {
+            String msg = expectThrows(IOException.class,
+                    () -> new HttpPageFetcher().fetch("http://127.0.0.1:" + s.getAddress().getPort() + "/"));
+            check(msg.contains("429"), "status missing from message: " + msg);
+        } finally {
+            s.stop(0);
+        }
+    }
+
+    private static void httpFetcherCancel() throws Exception {
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        com.sun.net.httpserver.HttpServer s = server(ex -> {
+            entered.countDown();
+            try {
+                release.await(30, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+                // server shutting down
+            }
+            ex.close();
+        });
+        SearchService service = new SearchService(1, new HttpPageFetcher(), SCRAPER);
+        try {
+            String url = "http://127.0.0.1:" + s.getAddress().getPort() + "/?q=^";
+            ResultCollector collector = new ResultCollector();
+            List<Future<?>> futures = service.search(
+                    EngineRepository.parse(record("k", "A", "C", url)), "q", 1, collector);
+            check(entered.await(5, TimeUnit.SECONDS), "request never reached the server");
+            long start = System.nanoTime();
+            service.cancelAll(futures);
+            service.shutdown();   // waits up to 2s for the worker to exit
+            long ms = (System.nanoTime() - start) / 1_000_000;
+            check(ms < 1500, "worker stayed blocked after cancel: " + ms + "ms");
+        } finally {
+            release.countDown();
+            s.stop(0);
         }
     }
 
