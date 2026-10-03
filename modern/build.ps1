@@ -3,6 +3,7 @@
 
 param(
     [switch]$Test,
+    [switch]$Benchmark,
     [switch]$Clean
 )
 
@@ -35,5 +36,11 @@ Write-Host "Compilation successful."
 if ($Test) {
     Write-Host "`nRunning tests..."
     & java "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.Tests
+    exit $LASTEXITCODE
+}
+
+if ($Benchmark) {
+    Write-Host "`nRunning benchmarks..."
+    & java "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.Benchmarks
     exit $LASTEXITCODE
 }
