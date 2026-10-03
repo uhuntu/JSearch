@@ -193,3 +193,12 @@ deliberate exception: `Sources/SearchThread.java` carries the two race fixes
 described above. The original March 2002 bytes are still in git
 (`bca88b3:Sources/SearchThread.java`, tag `pre-restructure-a664f23`). The full
 record, including the backup checksum, is in [PROVENANCE.md](PROVENANCE.md).
+
+---
+
+## Further reading
+
+- **[ANALYSIS.md](docs/ANALYSIS.md)** — Detailed design defect analysis and the deadlock patch
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** — Visual comparison of original vs modern design
+- **[modern/README.md](modern/README.md)** — Reference design: how it should have been built
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Guidelines for contributing to this archive
