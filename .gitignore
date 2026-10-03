@@ -12,3 +12,6 @@ vssver.scc
 # modern/ build output
 modern/out/
 modern/target/
+
+# Kilo IDE workspace (auto-created, safe to delete)
+.kilo/
