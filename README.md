@@ -1,5 +1,10 @@
 # JSearch
 
+[![Tests](https://github.com/uhuntu/JSearch/actions/workflows/tests.yml/badge.svg)](https://github.com/uhuntu/JSearch/actions/workflows/tests.yml)
+[![License: GPL-2.0](https://img.shields.io/badge/License-GPL--2.0-blue.svg)](LICENSE)
+[![JDK 11+](https://img.shields.io/badge/JDK-11%2B-green.svg)](https://adoptium.net/)
+[![Archive](https://img.shields.io/badge/Status-Archive-yellow.svg)](README.md)
+
 > "JSearch - turns search Engines into FIND engines - Programming in JAVA"
 > Copyright (C) 1999-2002 Hunt Lin \<huntlin@public.xm.fj.cn\>
 > Licensed under the GNU General Public License, version 2 or later. See `Releases/COPYING.TXT`.
