@@ -1,0 +1,24 @@
+# Protect GBK-encoded source files from accidental encoding conversion.
+# These files contain Chinese comments in legacy GBK/GB2312 encoding.
+# Opening/saving them as UTF-8 would permanently corrupt the content.
+Sources/*.java binary
+versions/2000-08/*.java binary
+versions/2001-12/JSApplet/*.java binary
+versions/2002-01/Sources/*.java binary
+
+# Engine data files and HTML snapshots are also GBK-encoded
+ENGINES/*.txt binary
+ENGINES/*.html binary
+versions/2000-08/*.txt binary
+versions/2000-08/*.CAB binary
+versions/2001-12/JSApplet/*.txt binary
+versions/2002-01/Releases/*.txt binary
+Releases/*.txt binary
+
+# Binary artifacts - should not be diffed
+*.class binary
+*.cab binary
+*.CAB binary
+*.zip binary
+*.rar binary
+*.doc binary

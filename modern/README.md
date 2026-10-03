@@ -14,15 +14,25 @@ built?*
 Requires JDK 11 or later. UTF-8 throughout — the original's GBK is not carried
 over.
 
+**Quick build (PowerShell):**
+
+```powershell
+.\build.ps1          # compile
+.\build.ps1 -Test    # compile and run tests
+.\build.ps1 -Clean   # clean build output
+```
+
+**Manual build:**
+
 ```sh
-javac -encoding UTF-8 -d out $(find src/main/java -name '*.java')
+javac -encoding UTF-8 -d out $(find src -name '*.java')
 java  -Dfile.encoding=UTF-8 -cp out jsearch.Demo
 ```
 
 ## Tests
 
-```sh
-./run-tests.sh      # 35 tests, plain JDK, no JUnit or build tool needed
+```powershell
+.\build.ps1 -Test    # 35 tests, plain JDK, no JUnit or build tool needed
 ```
 
 They cover engine parsing (shared URLs, duplicate identity, truncated/empty/CRLF
