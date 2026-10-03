@@ -12,23 +12,30 @@ usage() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  -t, --test     Run tests after building"
-    echo "  -c, --clean    Clean build output before building"
-    echo "  -h, --help     Show this help message"
+    echo "  -t, --test       Run tests after building"
+    echo "  -b, --benchmark  Run benchmarks after building"
+    echo "  -c, --clean      Clean build output before building"
+    echo "  -h, --help       Show this help message"
     echo ""
     echo "Examples:"
-    echo "  $0              # Compile only"
-    echo "  $0 -t           # Compile and run tests"
-    echo "  $0 -c -t        # Clean, compile, and run tests"
+    echo "  $0                # Compile only"
+    echo "  $0 -t             # Compile and run tests"
+    echo "  $0 -b             # Compile and run benchmarks"
+    echo "  $0 -c -t          # Clean, compile, and run tests"
 }
 
 CLEAN=false
 TEST=false
+BENCHMARK=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         -t|--test)
             TEST=true
+            shift
+            ;;
+        -b|--benchmark)
+            BENCHMARK=true
             shift
             ;;
         -c|--clean)
@@ -67,4 +74,10 @@ if [ "$TEST" = true ]; then
     echo ""
     echo "Running tests..."
     java -Dfile.encoding=UTF-8 -cp "$OUT_DIR" jsearch.Tests
+fi
+
+if [ "$BENCHMARK" = true ]; then
+    echo ""
+    echo "Running benchmarks..."
+    java -Dfile.encoding=UTF-8 -cp "$OUT_DIR" jsearch.Benchmarks
 fi
