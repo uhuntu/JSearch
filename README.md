@@ -201,4 +201,7 @@ record, including the backup checksum, is in [PROVENANCE.md](PROVENANCE.md).
 - **[ANALYSIS.md](docs/ANALYSIS.md)** — Detailed design defect analysis and the deadlock patch
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** — Visual comparison of original vs modern design
 - **[modern/README.md](modern/README.md)** — Reference design: how it should have been built
+- **[MIGRATION.md](MIGRATION.md)** — How to adapt the reference design for production
+- **[FAQ.md](FAQ.md)** — Frequently asked questions
+- **[QUICKSTART.md](QUICKSTART.md)** — Quick start guide for new contributors
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — Guidelines for contributing to this archive
