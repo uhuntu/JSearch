@@ -14,12 +14,35 @@ built?*
 Requires JDK 11 or later. UTF-8 throughout — the original's GBK is not carried
 over.
 
-**Quick build (PowerShell):**
+**PowerShell (Windows):**
 
 ```powershell
 .\build.ps1          # compile
 .\build.ps1 -Test    # compile and run tests
 .\build.ps1 -Clean   # clean build output
+```
+
+**Bash (Linux/Mac):**
+
+```bash
+./build.sh           # compile
+./build.sh -t        # compile and run tests
+./build.sh -c -t     # clean, compile, and run tests
+```
+
+**Make (any platform with make):**
+
+```bash
+make                 # compile
+make test            # compile and run tests
+make clean           # clean build output
+```
+
+**Docker:**
+
+```bash
+docker build -t jsearch ..
+docker run --rm jsearch
 ```
 
 **Manual build:**

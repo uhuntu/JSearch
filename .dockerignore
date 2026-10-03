@@ -1,0 +1,9 @@
+# Docker ignore file
+.git
+.github
+.kilo
+*.class
+modern/out/
+modern/target/
+*.suo
+vssver.scc
