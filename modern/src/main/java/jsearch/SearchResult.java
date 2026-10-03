@@ -1,5 +1,7 @@
 package jsearch;
 
+import java.util.Objects;
+
 /**
  * A single scraped result.
  *
@@ -35,6 +37,25 @@ public final class SearchResult {
 
     public String preview() {
         return preview;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof SearchResult)) {
+            return false;
+        }
+        SearchResult other = (SearchResult) o;
+        return url.equals(other.url)
+                && title.equals(other.title)
+                && preview.equals(other.preview);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(url, title, preview);
     }
 
     @Override

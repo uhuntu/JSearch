@@ -11,3 +11,4 @@ vssver.scc
 
 # modern/ build output
 modern/out/
+modern/target/

@@ -1,5 +1,7 @@
 package jsearch;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,7 +26,7 @@ public final class ResultCollector {
     /** Insertion-ordered and deduplicated; the one truth. */
     private final Set<String> seenUrls = new LinkedHashSet<>();
 
-    private final List<SearchResult> results = new java.util.ArrayList<>();
+    private final List<SearchResult> results = new ArrayList<>();
 
     private volatile Consumer<SearchResult> onResult = result -> { };
 
@@ -60,7 +62,7 @@ public final class ResultCollector {
 
     public List<SearchResult> results() {
         synchronized (lock) {
-            return java.util.Collections.unmodifiableList(new java.util.ArrayList<>(results));
+            return Collections.unmodifiableList(new ArrayList<>(results));
         }
     }
 

@@ -1,7 +1,8 @@
 package jsearch;
 
 import java.io.IOException;
-import java.util.ArrayList;import java.util.List;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
  * outstanding work, and {@code cancel(true)} interrupts the blocked socket read
  * instead of a flag that happens to be checked between characters.
  */
-public final class SearchService {
+public final class SearchService implements AutoCloseable {
 
     private final ExecutorService executor;
     private final PageFetcher fetcher;
@@ -98,6 +99,11 @@ public final class SearchService {
     }
 
     public void shutdown() {
+        close();
+    }
+
+    @Override
+    public void close() {
         executor.shutdown();
         try {
             if (!executor.awaitTermination(2, TimeUnit.SECONDS)) {
