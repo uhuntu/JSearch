@@ -1,0 +1,23 @@
+# Git blame ignore revisions
+# These commits are formatting-only and should be ignored in blame
+# Usage: git blame --ignore-revs-file .git-blame-ignore-revs <file>
+
+# Initial infrastructure commits (formatting, config)
+# 615ffc8 Add .kilo/ to .gitignore
+# 1725f47 Add build script, CI workflow, and .gitattributes
+# 9243394 Add architecture diagrams, analysis doc, contributing guide
+# 41b46cc Add LICENSE and CHANGELOG
+# bf0be38 Add GitHub issue and PR templates
+# 759ffdf Add Quick Start Guide
+# 18f2708 Add Security Policy and Code of Conduct
+# 4cd6a94 Add EditorConfig and commit message template
+# e532e84 Add FAQ, Dockerfile, Makefile
+# 244dd20 Update README with links
+# 2009579 Add Migration Guide
+# 03fead5 Add utility scripts
+# f144205 Add VSCode settings
+# c1e47d2 Add Project Overview
+# 480645c Add badges, roadmap, support
+# 1df2a5c Add benchmarks
+# 6179e03 Add release script
+# 1a9a157 Add benchmark support to build script
