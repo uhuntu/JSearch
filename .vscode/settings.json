@@ -1,0 +1,43 @@
+{
+    "files.encoding": "utf8",
+    "files.autoGuessEncoding": false,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.kilo": true,
+        "**/out": true,
+        "**/*.class": true,
+        "**/*.suo": true,
+        "**/vssver.scc": true
+    },
+    "search.exclude": {
+        "**/out": true,
+        "**/*.class": true,
+        "**/.kilo": true
+    },
+    "editor.tabSize": 4,
+    "editor.insertFinalNewline": true,
+    "editor.trimAutoWhitespace": true,
+    "[java]": {
+        "editor.tabSize": 4
+    },
+    "[markdown]": {
+        "editor.tabSize": 2,
+        "editor.trimAutoWhitespace": false
+    },
+    "[powershell]": {
+        "editor.tabSize": 2
+    },
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.project.sourcePaths": [
+        "modern/src/main/java"
+    ],
+    "java.project.outputPath": "modern/out",
+    "java.test.config": {
+        "classPaths": [
+            "modern/out"
+        ],
+        "vmArgs": [
+            "-Dfile.encoding=UTF-8"
+        ]
+    }
+}
