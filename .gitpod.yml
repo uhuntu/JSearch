@@ -1,0 +1,9 @@
+# Gitpod configuration
+tasks:
+  - init: cd modern && ./build.sh -t
+    command: echo "Ready to code!"
+
+vscode:
+  extensions:
+    - redhat.java
+    - vscjava.vscode-java-test
