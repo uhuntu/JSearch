@@ -6,8 +6,9 @@ Complete guide to all documentation in this repository.
 
 ### For New Visitors
 1. [README.md](README.md) - Start here
-2. [QUICKSTART.md](QUICKSTART.md) - Get running in 5 minutes
-3. [FAQ.md](FAQ.md) - Common questions
+2. [README.zh-CN.md](README.zh-CN.md) - 简体中文说明
+3. [QUICKSTART.md](QUICKSTART.md) - Get running in 5 minutes
+4. [FAQ.md](FAQ.md) - Common questions
 
 ### For Developers
 4. [modern/README.md](modern/README.md) - Reference design

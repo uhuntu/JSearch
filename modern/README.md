@@ -19,6 +19,7 @@ over.
 ```powershell
 .\build.ps1          # compile
 .\build.ps1 -Test    # compile and run tests
+.\build.ps1 -Web     # compile and launch interactive Web UI & REST API (http://localhost:8080)
 .\build.ps1 -Clean   # clean build output
 ```
 
@@ -27,6 +28,7 @@ over.
 ```bash
 ./build.sh           # compile
 ./build.sh -t        # compile and run tests
+./build.sh -w        # compile and launch interactive Web UI & REST API
 ./build.sh -c -t     # clean, compile, and run tests
 ```
 
@@ -35,6 +37,7 @@ over.
 ```bash
 make                 # compile
 make test            # compile and run tests
+make web             # compile and launch interactive Web UI & REST API
 make clean           # clean build output
 ```
 
@@ -42,7 +45,7 @@ make clean           # clean build output
 
 ```bash
 docker build -t jsearch ..
-docker run --rm jsearch
+docker run --rm -p 8080:8080 jsearch
 ```
 
 **Manual build:**
@@ -50,12 +53,25 @@ docker run --rm jsearch
 ```sh
 javac -encoding UTF-8 -d out $(find src -name '*.java')
 java  -Dfile.encoding=UTF-8 -cp out jsearch.Demo
+# or launch Web UI:
+java  -Dfile.encoding=UTF-8 -cp out jsearch.WebServer --port 8080
 ```
+
+## Interactive Web UI & REST API
+
+An interactive browser interface (`jsearch.WebServer`) runs on JDK's built-in HTTP server with zero external dependencies:
+- **Interactive Search:** Fan out across 2001 archive fixtures or dynamic queries with real-time deduplication.
+- **Side-by-Side Archaeology View:** Live side-by-side comparison showing how the 2002 URL-key bug silently dropped Chinese Google.
+- **REST API Endpoints:**
+  - `GET /api/engines` — List available search engines.
+  - `GET /api/search?q=java&mode=modern` — Run concurrent search and return deduplicated results with timing metrics.
+  - `GET /api/compare?q=java` — Side-by-side legacy vs. modern engine comparison.
+  - `GET /api/health` — Health check and archive availability.
 
 ## Tests
 
 ```powershell
-.\build.ps1 -Test    # 35 tests, plain JDK, no JUnit or build tool needed
+.\build.ps1 -Test    # 39 tests, plain JDK, no JUnit or build tool needed
 ```
 
 They cover engine parsing (shared URLs, duplicate identity, truncated/empty/CRLF

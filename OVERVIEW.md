@@ -60,15 +60,16 @@ JSearch/
 - **Complete documentation** (GB8567-88 standard, 8 documents)
 
 ### Reference Design (`modern/`)
-- **Component separation** — 13 files, single responsibility
+- **Component separation** — 15 files, single responsibility
 - **Modern concurrency** — `ExecutorService`, `Future.cancel(true)`
 - **Thread-safe dedup** — Single-lock check-then-act
-- **Testable** — 35 tests, archive fixtures
+- **Interactive Web UI & REST API** — Zero-dependency browser interface (`WebServer.java`)
+- **Testable** — 39 tests, archive fixtures
 - **No dependencies** — Runs on bare JDK 11+
 
 ### Infrastructure
 - **4 build systems** — PowerShell, Bash, Make, Docker
-- **CI/CD** — GitHub Actions (35 tests on every push/PR)
+- **CI/CD** — GitHub Actions (39 tests on every push/PR)
 - **IDE support** — VSCode, EditorConfig
 - **Community** — Issue/PR templates, Code of Conduct
 
@@ -78,7 +79,8 @@ JSearch/
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [README.md](README.md) | Project overview | Everyone |
+| [README.md](README.md) | Project overview (English) | Everyone |
+| [README.zh-CN.md](README.zh-CN.md) | Project overview (简体中文) | Everyone |
 | [QUICKSTART.md](QUICKSTART.md) | Get started in 5 minutes | New contributors |
 | [FAQ.md](FAQ.md) | Common questions | Everyone |
 | [ANALYSIS.md](docs/ANALYSIS.md) | Design defects | Developers, historians |
@@ -95,22 +97,23 @@ JSearch/
 
 | Method | Platform | Command |
 |--------|----------|---------|
-| PowerShell | Windows | `.\build.ps1 -Test` |
-| Bash | Linux/Mac | `./build.sh -t` |
-| Make | Any | `make test` |
-| Docker | Any | `docker run --rm jsearch` |
+| PowerShell | Windows | `.\build.ps1 -Test` (or `.\build.ps1 -Web`) |
+| Bash | Linux/Mac | `./build.sh -t` (or `./build.sh -w`) |
+| Make | Any | `make test` (or `make web`) |
+| Docker | Any | `docker run --rm -p 8080:8080 jsearch` |
 
 ---
 
 ## Test Coverage
 
-**35 tests** covering:
+**39 tests** covering:
 - Engine parsing (5 tests)
 - Engine identity and URL building (3 tests)
 - HTML scraping (5 tests)
 - Result collection and dedup (3 tests)
 - Search service concurrency (3 tests)
 - JSON API scraping (7 tests)
+- WebServer and REST API (4 tests)
 - Archive fixtures (9 tests)
 
 Run: `cd modern && ./build.ps1 -Test`

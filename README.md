@@ -9,6 +9,8 @@
 > Copyright (C) 1999-2002 Hunt Lin \<huntlin@public.xm.fj.cn\>
 > Licensed under the GNU General Public License, version 2 or later. See `Releases/COPYING.TXT`.
 
+**English | [简体中文](README.zh-CN.md)**
+
 A Java **applet** that fans search queries out across multiple search engines
 concurrently, scrapes the returned HTML for result blocks, and presents a single
 de-duplicated result list with title, URL and preview. Built with Microsoft

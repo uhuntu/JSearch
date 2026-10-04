@@ -14,6 +14,8 @@ usage() {
     echo "Options:"
     echo "  -t, --test       Run tests after building"
     echo "  -b, --benchmark  Run benchmarks after building"
+    echo "  -w, --web        Launch interactive Web UI and REST API server"
+    echo "  -p, --port PORT  Port for Web UI (default: 8080)"
     echo "  -c, --clean      Clean build output before building"
     echo "  -h, --help       Show this help message"
     echo ""
@@ -21,12 +23,15 @@ usage() {
     echo "  $0                # Compile only"
     echo "  $0 -t             # Compile and run tests"
     echo "  $0 -b             # Compile and run benchmarks"
+    echo "  $0 -w             # Launch interactive Web UI"
     echo "  $0 -c -t          # Clean, compile, and run tests"
 }
 
 CLEAN=false
 TEST=false
 BENCHMARK=false
+WEB=false
+PORT=8080
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -37,6 +42,14 @@ while [[ $# -gt 0 ]]; do
         -b|--benchmark)
             BENCHMARK=true
             shift
+            ;;
+        -w|--web)
+            WEB=true
+            shift
+            ;;
+        -p|--port)
+            PORT="$2"
+            shift 2
             ;;
         -c|--clean)
             CLEAN=true
@@ -80,4 +93,10 @@ if [ "$BENCHMARK" = true ]; then
     echo ""
     echo "Running benchmarks..."
     java -Dfile.encoding=UTF-8 -cp "$OUT_DIR" jsearch.Benchmarks
+fi
+
+if [ "$WEB" = true ]; then
+    echo ""
+    echo "Launching Web UI on http://localhost:$PORT..."
+    java -Dfile.encoding=UTF-8 -cp "$OUT_DIR" jsearch.WebServer --port "$PORT"
 fi

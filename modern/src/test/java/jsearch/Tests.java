@@ -66,6 +66,12 @@ public final class Tests {
         test("http fetcher rejects non-2xx", Tests::httpFetcherRejectsError);
         test("cancel interrupts a real in-flight HTTP request", Tests::httpFetcherCancel);
 
+        // WebServer & REST API
+        test("web server serves HTML UI and health API", Tests::webServerHealthAndUi);
+        test("web server provides engines list", Tests::webServerEnginesApi);
+        test("web server executes search query", Tests::webServerSearchApi);
+        test("web server compare API detects legacy URL collision defect", Tests::webServerCompareApi);
+
         // The archive's own captured pages, as fixtures
         testArchive("shipped engine file yields three engines, not two", Tests::shippedEnginesSurvive);
         testArchive("shipped markers are the ones the analysis documents", Tests::shippedMarkers);
@@ -562,6 +568,49 @@ public final class Tests {
         } finally {
             release.countDown();
             s.stop(0);
+        }
+    }
+
+    // ---- WebServer -------------------------------------------------------
+
+    private static void webServerHealthAndUi() throws Exception {
+        try (WebServer ws = new WebServer(0)) {
+            ws.start();
+            HttpPageFetcher f = new HttpPageFetcher();
+            String base = "http://127.0.0.1:" + ws.getPort();
+            String ui = f.fetch(base + "/");
+            check(ui.contains("JSearch") && ui.contains("Turns Search Engines into FIND Engines"), "UI page missing title/content");
+            String health = f.fetch(base + "/api/health");
+            check(health.contains("\"status\":\"ok\""), "health API returned: " + health);
+        }
+    }
+
+    private static void webServerEnginesApi() throws Exception {
+        try (WebServer ws = new WebServer(0)) {
+            ws.start();
+            HttpPageFetcher f = new HttpPageFetcher();
+            String json = f.fetch("http://127.0.0.1:" + ws.getPort() + "/api/engines");
+            check(json.contains("Google") && json.contains("Baidu"), "engines API missing key engines: " + json);
+        }
+    }
+
+    private static void webServerSearchApi() throws Exception {
+        try (WebServer ws = new WebServer(0)) {
+            ws.start();
+            HttpPageFetcher f = new HttpPageFetcher();
+            String json = f.fetch("http://127.0.0.1:" + ws.getPort() + "/api/search?q=java");
+            check(json.contains("\"totalUnique\":") && json.contains("\"results\":"), "search API structure error: " + json);
+            check(!json.contains("\"totalUnique\":0"), "search API should return results for 'java'");
+        }
+    }
+
+    private static void webServerCompareApi() throws Exception {
+        try (WebServer ws = new WebServer(0)) {
+            ws.start();
+            HttpPageFetcher f = new HttpPageFetcher();
+            String json = f.fetch("http://127.0.0.1:" + ws.getPort() + "/api/compare?q=java");
+            check(json.contains("\"defectExplanation\":") && json.contains("\"lostEngines\":"), "compare API missing defect fields");
+            check(json.contains("\"legacy\":") && json.contains("\"modern\":"), "compare API missing legacy/modern fields");
         }
     }
 

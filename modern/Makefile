@@ -1,7 +1,7 @@
 # JSearch modern/ Makefile
 # Requires JDK 11 or later
 
-.PHONY: all build test benchmark clean help
+.PHONY: all build test benchmark web clean help
 
 OUT_DIR := out
 SRC_DIR := src
@@ -25,6 +25,11 @@ benchmark: build
 	@echo "Running benchmarks..."
 	java -Dfile.encoding=UTF-8 -cp $(OUT_DIR) jsearch.Benchmarks
 
+web: build
+	@echo ""
+	@echo "Launching Web UI on http://localhost:8080..."
+	java -Dfile.encoding=UTF-8 -cp $(OUT_DIR) jsearch.WebServer
+
 clean:
 	@echo "Cleaning $(OUT_DIR)..."
 	rm -rf $(OUT_DIR)
@@ -35,6 +40,7 @@ help:
 	@echo "  make            - Compile the project"
 	@echo "  make test       - Compile and run tests"
 	@echo "  make benchmark  - Compile and run benchmarks"
+	@echo "  make web        - Launch interactive Web UI and REST API"
 	@echo "  make clean      - Remove build output"
 	@echo "  make help       - Show this help"
 	@echo ""

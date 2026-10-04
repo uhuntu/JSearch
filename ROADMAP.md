@@ -15,11 +15,13 @@ Future improvements and ideas for the JSearch archive project.
 - [x] Architecture diagrams
 - [x] Migration guide
 - [x] Performance benchmarks (`modern/Benchmarks.java`, wired into all build scripts)
+- [x] Interactive Web UI demo (`modern/WebServer.java`, zero external dependencies)
+- [x] REST API for search aggregation (`/api/engines`, `/api/search`, `/api/compare`, `/api/health`)
+- [x] Chinese translation of main README (`README.zh-CN.md`)
 
 ## Planned 
 
 ### Documentation
-- [ ] Translate key docs to Chinese (original project was Chinese)
 - [ ] Create video walkthrough of the archive
 - [ ] Add more historical context about early 2000s Chinese software development
 - [ ] Document the GB8567-88 standard in English
@@ -30,8 +32,6 @@ Future improvements and ideas for the JSearch archive project.
 - [ ] Increase test coverage to 90%+
 
 ### Features
-- [ ] Web UI demo (Spring Boot + Thymeleaf)
-- [ ] REST API for search aggregation
 - [ ] Support for more modern search APIs (DuckDuckGo, Bing, etc.)
 - [ ] Add caching layer
 - [ ] Add rate limiting

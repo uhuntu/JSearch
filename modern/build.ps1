@@ -4,6 +4,8 @@
 param(
     [switch]$Test,
     [switch]$Benchmark,
+    [switch]$Web,
+    [int]$Port = 8080,
     [switch]$Clean
 )
 
@@ -42,5 +44,11 @@ if ($Test) {
 if ($Benchmark) {
     Write-Host "`nRunning benchmarks..."
     & java "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.Benchmarks
+    exit $LASTEXITCODE
+}
+
+if ($Web) {
+    Write-Host "`nLaunching Web UI on http://localhost:$Port..."
+    & java "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.WebServer --port $Port
     exit $LASTEXITCODE
 }
