@@ -191,7 +191,7 @@ page has no markers and cannot be scraped by anything the release shipped.
 
 **The captured Google page is page 2, not page 1.** Its pager marks page 2 as
 current, so the ten results are results 11–20 for "java". The table in
-`../ANALYSIS.md` lists exactly these ten; its heading has been corrected to say
+`../docs/ANALYSIS.md` lists exactly these ten; its heading has been corrected to say
 so.
 
 ## Honest scope

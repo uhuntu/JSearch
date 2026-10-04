@@ -21,9 +21,9 @@ JSearch/
 ├── versions/             # Historical snapshots (2000, 2001, 2002)
 ├── Releases/             # Shipped release files
 ├── ENGINES/              # Captured HTML pages from 2001
-├── docs/                 # GB8567-88 documentation + analysis
+├── docs/                 # GB8567-88 docs + ANALYSIS.md, ARCHITECTURE.md
 ├── modern/               # Reference design (safe to edit)
-│   ├── src/main/java/    # 13 Java files
+│   ├── src/main/java/    # 14 Java files
 │   ├── src/test/java/    # 35 tests
 │   ├── build.ps1         # PowerShell build
 │   ├── build.sh          # Bash build
@@ -32,8 +32,12 @@ JSearch/
 ├── .github/              # CI/CD and templates
 ├── .vscode/              # IDE configuration
 ├── README.md             # Main documentation
-├── ANALYSIS.md           # Design defect analysis
-├── ARCHITECTURE.md       # Visual design comparison
+├── OVERVIEW.md           # This document
+├── INDEX.md              # Documentation index
+├── GLOSSARY.md           # Technical terms
+├── TUTORIALS.md          # Software archaeology tutorials
+├── ROADMAP.md            # Future plans
+├── PROVENANCE.md         # Recovery record
 ├── CHANGELOG.md          # Version history
 ├── CODE_OF_CONDUCT.md    # Community standards
 ├── CONTRIBUTING.md       # Contribution guidelines
@@ -41,7 +45,8 @@ JSearch/
 ├── LICENSE               # GPL-2.0
 ├── MIGRATION.md          # Production adaptation guide
 ├── QUICKSTART.md         # Quick start guide
-└── SECURITY.md           # Security policy
+├── SECURITY.md           # Security policy
+└── SUPPORT.md            # Where to get help
 ```
 
 ---

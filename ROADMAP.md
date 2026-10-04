@@ -14,6 +14,7 @@ Future improvements and ideas for the JSearch archive project.
 - [x] Utility scripts
 - [x] Architecture diagrams
 - [x] Migration guide
+- [x] Performance benchmarks (`modern/Benchmarks.java`, wired into all build scripts)
 
 ## Planned 
 
@@ -25,7 +26,6 @@ Future improvements and ideas for the JSearch archive project.
 
 ### Testing
 - [ ] Add mutation testing to verify test quality
-- [ ] Add performance benchmarks
 - [ ] Add load testing for concurrent searches
 - [ ] Increase test coverage to 90%+
 

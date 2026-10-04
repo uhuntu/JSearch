@@ -46,14 +46,12 @@ JSearch/
 ├── versions/             # Historical snapshots (2000, 2001, 2002)
 ├── Releases/             # Shipped release files
 ├── ENGINES/              # Captured HTML pages from 2001
-├── docs/                 # GB8567-88 documentation + analysis
+├── docs/                 # GB8567-88 docs + ANALYSIS.md, ARCHITECTURE.md
 ├── modern/               # Reference design (safe to edit)
 │   ├── src/main/java/    # Reference implementation
 │   ├── src/test/java/    # 35 tests
 │   └── build.ps1         # Build script
 ├── README.md             # Main documentation
-├── ANALYSIS.md           # Design defect analysis
-├── ARCHITECTURE.md       # Visual design comparison
 ├── CONTRIBUTING.md       # Contribution guidelines
 └── CHANGELOG.md          # Version history
 ```

@@ -139,7 +139,7 @@ to.** The `.class` files in each `versions/` snapshot are more trustworthy.
 
 ## Analysis
 
-The code-level findings live in [ANALYSIS.md](ANALYSIS.md):
+The code-level findings live in [ANALYSIS.md](docs/ANALYSIS.md):
 
 - what changed from 1.2.3 to 2.0.0.0
 - the "deadlock patch" that does not work (and the fix merged from `fix/showresult-locking`)
