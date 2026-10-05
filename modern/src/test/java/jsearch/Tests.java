@@ -1,6 +1,10 @@
 package jsearch;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -81,6 +85,12 @@ public final class Tests {
         testArchive("baidu_cn.html yields all ten results", Tests::baiduPage);
         testArchive("baidu's end marker only ever appears inside a tag", Tests::baiduMarkerOnlyInTag);
         testArchive("lycos_en.html was captured but never shipped", Tests::lycosOrphaned);
+
+        // The encoding the archive is preserved in
+        testArchive("a UTF-8 copy of JSEngines.txt is caught", Tests::conversionIsCaught);
+        testArchive("original files are still GBK and still present", Tests::originalFilesAreGbk);
+        testArchive("modern sources and Markdown docs are UTF-8", Tests::archivalFilesAreUtf8);
+        testArchive("every original text file has an encoding expectation", Tests::noUnlistedFiles);
 
         System.out.println();
         System.out.println(passed + " passed, " + failures.size() + " failed"
@@ -314,6 +324,49 @@ public final class Tests {
         for (Engine engine : ArchiveFixtures.shippedEngines()) {
             check(!engine.urlTemplate().contains("lycos"), "Lycos was shipped after all: " + engine);
         }
+    }
+
+    // ---- EncodingGuard ----------------------------------------------------
+
+    // Each of these is gated on the archive being present, which is also the
+    // condition under which EncodingGuard has anything to look at.
+
+    private static EncodingGuard guard() {
+        return EncodingGuard.open()
+                .orElseThrow(() -> new AssertionError("archive root not found"));
+    }
+
+    /**
+     * The check is only worth having if it can see a conversion, so this one
+     * performs the damage in memory: decode the shipped engine file as GBK,
+     * re-encode it as UTF-8, and require that the guard no longer accepts it.
+     */
+    private static void conversionIsCaught() throws IOException {
+        Charset gbk = Charset.forName("GBK");
+        Path path = ArchiveFixtures.root().get().resolve("Releases").resolve("JSEngines.txt");
+        byte[] original = Files.readAllBytes(path);
+        check(EncodingGuard.classify(original, gbk) == EncodingGuard.Kind.GBK,
+                "the shipped file should classify as GBK");
+        byte[] converted = new String(original, gbk).getBytes(StandardCharsets.UTF_8);
+        check(EncodingGuard.classify(converted, gbk) == EncodingGuard.Kind.UTF8,
+                "a UTF-8 copy read as "
+                        + EncodingGuard.classify(converted, gbk)
+                        + ", so the guard would let the damage through");
+    }
+
+    private static void originalFilesAreGbk() {
+        List<String> problems = guard().checkArchive();
+        check(problems.isEmpty(), String.join("; ", problems));
+    }
+
+    private static void archivalFilesAreUtf8() {
+        List<String> problems = guard().checkUtf8Files();
+        check(problems.isEmpty(), String.join("; ", problems));
+    }
+
+    private static void noUnlistedFiles() {
+        List<String> unlisted = guard().unlistedFiles();
+        check(unlisted.isEmpty(), "unclassified original files: " + String.join("; ", unlisted));
     }
 
     private static int count(String text, String needle) {

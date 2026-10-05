@@ -44,7 +44,26 @@ iconv -f GBK -t UTF-8 Sources/JSApplet.java -o /tmp/JSApplet.utf8.java
 
 The files have deliberately **not** been converted. Converting would destroy
 the artifact. Files added by this archival pass (this README, `.gitignore`)
-are UTF-8 and use ASCII-only identifiers where practical.
+are UTF-8 and use ASCII-only identifiers where practical. The one original file
+that is not GBK is `ENGINES/lycos_en.html`: it was never Chinese, and it is
+ISO-8859-1 with ten bytes above 0x7F.
+
+To check that nothing has been converted, rather than trusting appearances:
+
+```sh
+# cross-platform, needs a JDK; this is also what CI runs
+cd modern && ./build.ps1           # or ./build.sh
+java -Dfile.encoding=UTF-8 -cp out jsearch.EncodingGuard
+
+# Windows, no build needed
+./scripts/verify-gbk.ps1
+```
+
+Both classify every original file by strict decoding and list any file that no
+longer decodes as it should, along with files that have gone missing. They also
+run as part of `modern` tests. A file that was merely *displayed* in the wrong
+encoding is fine; these catch the case that is not, where the bytes themselves
+were rewritten.
 
 ---
 

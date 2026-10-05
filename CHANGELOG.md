@@ -13,6 +13,23 @@ are archive housekeeping. This repo does not version a live search service.
 ### Changed
 - Stated the project identity: archive plus teaching sketch, not a search product
 - `ROADMAP.md`, `CONTRIBUTING.md`, `MIGRATION.md`, and related docs now match that scope
+- `scripts/verify-gbk.ps1` now detects conversion instead of assuming it cannot
+  happen: it decodes strictly, where before it decoded with .NET's replacing
+  fallback and so accepted a file that had already been rewritten as UTF-8.
+  Its hardcoded `c:\Users\...` default has been replaced by the script's own
+  repository root, and `docs/txts/` is globbed so the script carries no
+  non-ASCII of its own.
+
+### Added
+- `modern/src/test/java/jsearch/EncodingGuard.java` — same check without needing
+  Windows: classifies every original file by strict GBK/UTF-8 decoding, lists
+  files that changed encoding or went missing, and refuses anything of GBK
+  creeping into `modern/` or the Markdown docs. Runs standalone and as four of
+  the suite's tests.
+- `.github/workflows/tests.yml` gained an `encoding` job that runs it on every
+  push, so a converted artifact and a missing one both fail CI.
+- `ENGINES/lycos_en.html` is recorded as ISO-8859-1 rather than GBK — the single
+  original file that was never Chinese, previously implied to be GBK.
 
 ### Added (archive pass)
 - `docs/ARCHITECTURE.md` — Mermaid diagrams comparing original vs modern design

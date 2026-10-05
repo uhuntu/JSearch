@@ -68,7 +68,7 @@ a public API.
 ## Tests
 
 ```powershell
-.\build.ps1 -Test    # 39 tests, plain JDK, no JUnit or build tool needed
+.\build.ps1 -Test    # 43 tests, plain JDK, no JUnit or build tool needed
 ```
 
 They cover engine parsing (shared URLs, duplicate identity, truncated/empty/CRLF
@@ -77,10 +77,19 @@ characters, markers inside tags, truncated pages terminate), `ResultCollector`
 dedup under 8 threads, and `SearchService` (cross-engine dedup, one failing
 engine not sinking the rest, `cancel(true)` interrupting a blocked fetch).
 
-Nine of them run against **the archive's own files** — the four captured pages in
-`../ENGINES/` and the shipped `../Releases/JSEngines.txt` — read as GBK by
-`ArchiveFixtures`. They skip, rather than fail, when the archive is not next to
-this directory, so `modern/` still stands alone.
+Thirteen of them run against **the archive's own files** — the four captured
+pages in `../ENGINES/` and the shipped `../Releases/JSEngines.txt` — read as GBK
+by `ArchiveFixtures`. They skip, rather than fail, when the archive is not next
+to this directory, so `modern/` still stands alone.
+
+The last four of those are `EncodingGuard`, and they are the reason `modern/`
+looks at the 2002 tree at all rather than only at its own code. Every file in the
+archive is GBK except `ENGINES/lycos_en.html`, which is ISO-8859-1, and these
+check both that those encodings still hold and that nothing has disappeared: a
+GBK file saved back as UTF-8 still reads as Chinese, so the damage has to be
+found by strict decoding rather than by looking at it. Run it on its own with
+`java -cp out jsearch.EncodingGuard` for the full per-file list, including any
+file that no expectation covers yet.
 
 Writing them found two real bugs:
 

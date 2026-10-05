@@ -10,6 +10,8 @@ rate limiting, or a deployable aggregator.
 - Keep provenance honest (what was moved, what was patched, where the original bytes live)
 - Keep `modern/` a compiling contrast to the 2002 design: tests, archive fixtures, the URL-key collision demo
 - Corrections to analysis, encoding protection, and CI that runs those tests
+- The encoding guard (`EncodingGuard`, `verify-gbk.ps1`, the `encoding` CI job),
+  which now checks all original files rather than listing ones it assumes are fine
 
 ## Out of scope
 
@@ -24,6 +26,5 @@ rate limiting, or a deployable aggregator.
 - More historical context on early-2000s Chinese software practice and GB8567-88
 - Extra version snapshots, with provenance
 - A visual diff of the four generations
-- CI that verifies GBK files were not converted
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).

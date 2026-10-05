@@ -82,6 +82,24 @@ java "-Dfile.encoding=UTF-8" -cp out jsearch.Demo
 .\build.ps1 -Clean -Test
 ```
 
+### Verify the archive has not been converted
+
+The original files are GBK. Saving one from an editor set to UTF-8 rewrites it
+permanently, and it still looks like Chinese afterwards.
+
+```powershell
+# Windows, stands alone, no build needed
+.\scripts\verify-gbk.ps1
+```
+
+```bash
+# anywhere else, from the modern/ directory after building
+java -Dfile.encoding=UTF-8 -cp out jsearch.EncodingGuard
+```
+
+Expect a per-file list of detected encodings and a count of zero wrong. Both
+exit non-zero if an original file has changed encoding or disappeared.
+
 ### View original source (with correct encoding)
 
 ```bash

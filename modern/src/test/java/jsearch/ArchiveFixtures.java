@@ -48,6 +48,15 @@ final class ArchiveFixtures {
         return root != null && charset().isPresent();
     }
 
+    /**
+     * The archive root when it was found, independent of charset support, so
+     * callers that only need a path — the encoding guard, say — can work even
+     * on a JVM without GBK.
+     */
+    static Optional<Path> root() {
+        return Optional.ofNullable(root);
+    }
+
     /** The reason {@link #available()} is false, for a skip message. */
     static String unavailableReason() {
         if (root == null) {
