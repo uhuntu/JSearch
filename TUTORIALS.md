@@ -27,10 +27,10 @@ Learn software archaeology through JSearch.
 2. Compare original vs modern locking
 3. Understand Future.cancel(true)
 
-## Tutorial 6: Production Adaptation (60 min)
+## Tutorial 6: What this repo is not (10 min)
 1. Read MIGRATION.md
-2. Study Spring Boot example
-3. Design your integration
+2. Read ROADMAP.md
+3. Confirm `modern/` is a sketch, not a product
 
 ## Tutorial 7: Contributing (15 min)
 1. Read CONTRIBUTING.md

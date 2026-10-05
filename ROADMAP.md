@@ -1,72 +1,29 @@
 # Roadmap
 
-Future improvements and ideas for the JSearch archive project.
+This repository is an **archive** with a small teaching sketch in `modern/`.
+It is not a search product. There is no plan to add DuckDuckGo, Bing, caching,
+rate limiting, or a deployable aggregator.
 
-## Completed ✅
+## In scope
 
-- [x] Build scripts (PowerShell, Bash, Make, Docker)
-- [x] GitHub Actions CI
-- [x] Comprehensive documentation (12+ docs)
-- [x] Community standards (CoC, Contributing, Security)
-- [x] Issue/PR templates
-- [x] GBK encoding protection
-- [x] VSCode configuration
-- [x] Utility scripts
-- [x] Architecture diagrams
-- [x] Migration guide
-- [x] Performance benchmarks (`modern/Benchmarks.java`, wired into all build scripts)
-- [x] Interactive Web UI demo (`modern/WebServer.java`, zero external dependencies)
-- [x] REST API for search aggregation (`/api/engines`, `/api/search`, `/api/compare`, `/api/health`)
-- [x] Chinese translation of main README (`README.zh-CN.md`)
+- Keep original trees (`Sources/`, `versions/`, `Releases/`, `ENGINES/`, GB8567 docs) frozen and GBK-safe
+- Keep provenance honest (what was moved, what was patched, where the original bytes live)
+- Keep `modern/` a compiling contrast to the 2002 design: tests, archive fixtures, the URL-key collision demo
+- Corrections to analysis, encoding protection, and CI that runs those tests
 
-## Planned 
+## Out of scope
 
-### Documentation
-- [ ] Create video walkthrough of the archive
-- [ ] Add more historical context about early 2000s Chinese software development
-- [ ] Document the GB8567-88 standard in English
+- Reviving the applet
+- Porting the UI
+- Building a metasearch service
+- “Production adaptation” of `modern/`
+- Community-growth kits that do not help someone read the 2002 source
 
-### Testing
-- [ ] Add mutation testing to verify test quality
-- [ ] Add load testing for concurrent searches
-- [ ] Increase test coverage to 90%+
+## Maybe, if they serve the archive
 
-### Features
-- [ ] Support for more modern search APIs (DuckDuckGo, Bing, etc.)
-- [ ] Add caching layer
-- [ ] Add rate limiting
+- More historical context on early-2000s Chinese software practice and GB8567-88
+- Extra version snapshots, with provenance
+- A visual diff of the four generations
+- CI that verifies GBK files were not converted
 
-### Tools
-- [ ] Visual diff tool for comparing versions
-- [ ] Automated encoding verification in CI
-- [ ] Code metrics dashboard
-- [ ] Dependency vulnerability scanning
-
-### Community
-- [ ] GitHub Pages site for documentation
-- [ ] Blog posts about the archive recovery process
-- [ ] Conference talk proposal (software archaeology)
-- [ ] Academic paper collaboration
-
-## Ideas 💡
-
-### Research
-- Compare with other search aggregators from the same era
-- Study the evolution of search engine APIs
-- Analyze the impact of applet security model on early web apps
-
-### Preservation
-- Archive more versions if discovered
-- Interview original author if possible
-- Document the development environment (Visual J++ 6.0)
-
-### Education
-- Use as case study in software engineering courses
-- Create exercises based on the design defects
-- Build interactive tutorials
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for how to help with any of these items.
-
-Open an [issue](https://github.com/uhuntu/JSearch/issues) to discuss new ideas.
+See [CONTRIBUTING.md](CONTRIBUTING.md).

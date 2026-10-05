@@ -1,13 +1,13 @@
 # JSearch — reference design
 
 A small, compiling sketch of how JSearch should have been put together. **This is
-not a revival and not a port of the original.** Nothing here talks to a network, a
-browser, or an applet; the fetcher serves canned HTML so the whole pipeline runs
-on any JVM.
+not a revival, not a port, and not a search product.** The original source, in
+all four generations, is untouched one directory up. This directory answers the
+question the archive raises: *how should it have been built?*
 
-The original source, in all four generations, is untouched one directory up. This
-exists to answer the question the archive raises: *how should it have been
-built?*
+Default tests use canned HTML (archive fixtures), so the pipeline runs on any
+JVM with no live engines. `HttpPageFetcher` and `WebServer` exist as illustrations
+of seams the 2002 applet lacked — they are not a service to host.
 
 ## Build and run
 
@@ -19,7 +19,7 @@ over.
 ```powershell
 .\build.ps1          # compile
 .\build.ps1 -Test    # compile and run tests
-.\build.ps1 -Web     # compile and launch interactive Web UI & REST API (http://localhost:8080)
+.\build.ps1 -Web     # local demo of the 2002 URL-key bug (http://localhost:8080)
 .\build.ps1 -Clean   # clean build output
 ```
 
@@ -28,7 +28,7 @@ over.
 ```bash
 ./build.sh           # compile
 ./build.sh -t        # compile and run tests
-./build.sh -w        # compile and launch interactive Web UI & REST API
+./build.sh -w        # local demo of the 2002 URL-key bug
 ./build.sh -c -t     # clean, compile, and run tests
 ```
 
@@ -37,7 +37,7 @@ over.
 ```bash
 make                 # compile
 make test            # compile and run tests
-make web             # compile and launch interactive Web UI & REST API
+make web             # local demo of the 2002 URL-key bug
 make clean           # clean build output
 ```
 
@@ -53,20 +53,17 @@ docker run --rm -p 8080:8080 jsearch
 ```sh
 javac -encoding UTF-8 -d out $(find src -name '*.java')
 java  -Dfile.encoding=UTF-8 -cp out jsearch.Demo
-# or launch Web UI:
+# local archaeology demo (fixtures + URL-key comparison):
 java  -Dfile.encoding=UTF-8 -cp out jsearch.WebServer --port 8080
 ```
 
-## Interactive Web UI & REST API
+## Local demo (`WebServer`)
 
-An interactive browser interface (`jsearch.WebServer`) runs on JDK's built-in HTTP server with zero external dependencies:
-- **Interactive Search:** Fan out across 2001 archive fixtures or dynamic queries with real-time deduplication.
-- **Side-by-Side Archaeology View:** Live side-by-side comparison showing how the 2002 URL-key bug silently dropped Chinese Google.
-- **REST API Endpoints:**
-  - `GET /api/engines` — List available search engines.
-  - `GET /api/search?q=java&mode=modern` — Run concurrent search and return deduplicated results with timing metrics.
-  - `GET /api/compare?q=java` — Side-by-side legacy vs. modern engine comparison.
-  - `GET /api/health` — Health check and archive availability.
+`jsearch.WebServer` is a JDK `HttpServer` page that runs the sketch against
+2001 archive fixtures and shows, side by side, how the 2002 URL-as-key
+`Hashtable` dropped Chinese Google. HTTP routes (`/api/compare`, `/api/search`,
+…) exist so that demo and its tests can talk to the same process. They are not
+a public API.
 
 ## Tests
 
@@ -125,9 +122,9 @@ result blocks with one duplicated URL record exactly two results.
 | `Thread` per engine, `static int actualSearchAllowed`, polled `static boolean _stop` | `ExecutorService` fixed pool, `Future`, `cancel(true)` |
 | mutable `ResultsDetails` shared across threads, defensively copied at the last moment | immutable `SearchResult` |
 | scraping inline in the worker, mutating statics | `BlockScraper` interface, `HtmlBlockScraper` impl, pure `String` → `List<SearchResult>` |
-| `changeLanguage(int)` switch with hardcoded strings | *(not built)* — `ResourceBundle` is the obvious next step |
-| `setBounds(x,y,w,h)` everywhere | *(not built)* — layout managers |
-| `Runtime.exec(browser + " " + url)` | *(not built)* — `Desktop.browse()` |
+| `changeLanguage(int)` switch with hardcoded strings | *(not built)* |
+| `setBounds(x,y,w,h)` everywhere | *(not built)* |
+| `Runtime.exec(browser + " " + url)` | *(not built)* |
 
 `cancel(true)` interrupts a thread blocked on a socket read, where the original's
 `_stop` flag was only noticed between characters. That is the difference between
@@ -149,20 +146,16 @@ removes the constraint instead of working around it.
 
 ## Deliberately not built
 
-- No UI. The original's `JSApplet` was ~900 lines doing layout, HTTP, threading,
-  state, i18n and browser launching at once. Untangling that is the largest piece
-  of work and the least interesting to read about.
-- No *scraping* network fetcher. `HttpPageFetcher` exists, but it is aimed at
-  search APIs (below); pointing it at the dead 2001 engines would only
-  re-create the fragility this design avoids.
+- No applet UI. `WebServer` only demonstrates engine identity and fixture
+  scraping; it is not a replacement for `JSApplet`.
+- No live HTML scraping of Google or Baidu. Pointing a fetcher at those URLs
+  would only re-create the fragility this archive documents.
 
-## Talking to a real search API
+## Optional: JSON fetcher seams (not a product)
 
-`HttpPageFetcher` (JDK `java.net.http`, timeouts, per-URL-prefix headers so an
-API key is never sent to another host) plus `JsonApiScraper` (a `BlockScraper`
-for JSON, with `brave()` and `searxng()` presets and a ~150-line dependency-free
-`Json` reader) replace the HTML scraping for engines that offer an API. Nothing
-in `SearchService` changed: the seams were already there.
+`HttpPageFetcher` and `JsonApiScraper` exist to prove that `SearchService` does
+not care whether a page is HTML or JSON. They are **not** an invitation to turn
+this archive into a live aggregator. `ApiDemo` is a local experiment.
 
 ```sh
 BRAVE_API_KEY=...  java -cp out jsearch.ApiDemo "your query"
@@ -213,5 +206,5 @@ so.
 ## Honest scope
 
 The original cannot run: applets are gone from browsers and from the JDK, and
-every engine it scraped is dead or blocking. This is worth reading as a design,
-not as something to deploy.
+every engine it scraped is dead or blocking. Read this as a design contrast,
+not as something to deploy. A live metasearch tool belongs in a different repo.

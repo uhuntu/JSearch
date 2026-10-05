@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get up and running with JSearch archive in 5 minutes.
+Run the teaching sketch. The 1999–2002 applet itself cannot run.
 
 ## Prerequisites
 
@@ -32,11 +32,8 @@ chmod +x build.sh
 ./build.sh -t
 ```
 
-You should see:
-
-```
-35 passed, 0 failed
-```
+You should see a pass count and `0 failed`. Archive-fixture tests skip if
+`ENGINES/` / `Releases/` are missing.
 
 ## Project structure
 
@@ -49,7 +46,7 @@ JSearch/
 ├── docs/                 # GB8567-88 docs + ANALYSIS.md, ARCHITECTURE.md
 ├── modern/               # Reference design (safe to edit)
 │   ├── src/main/java/    # Reference implementation
-│   ├── src/test/java/    # 35 tests
+│   ├── src/test/java/    # Tests (incl. archive fixtures)
 │   └── build.ps1         # Build script
 ├── README.md             # Main documentation
 ├── CONTRIBUTING.md       # Contribution guidelines
@@ -108,7 +105,7 @@ iconv -f GBK -t UTF-8 Sources/JSApplet.java | less
 - `Future.cancel(true)` interrupts blocked socket reads
 - Single `ResultCollector` with one lock
 - `(name, category)` as engine identity (no collisions)
-- 35 tests covering all components
+- Tests covering parsing, concurrent dedup, and archive fixtures
 
 ## Contributing
 

@@ -17,9 +17,11 @@ de-duplicated result list with title, URL and preview. Built with Microsoft
 Visual J++ 6.0 and documented against the Chinese national software
 documentation standard **GB8567-88**.
 
-This repository is an **archive**. The original program cannot be
-built or run today (see [Why this cannot be revived](#why-this-cannot-be-revived)).
-It is preserved and organized so the development history is legible.
+This repository is an **archive**, not a search product. The original program
+cannot be built or run today (see [Why this cannot be revived](#why-this-cannot-be-revived)).
+It is preserved so the development history is legible. `modern/` is a compiling
+design study and a local demo of one 2002 bug — not a metasearch service to
+deploy.
 
 ---
 
@@ -208,7 +210,8 @@ record, including the backup checksum, is in [PROVENANCE.md](PROVENANCE.md).
 - **[ANALYSIS.md](docs/ANALYSIS.md)** — Detailed design defect analysis and the deadlock patch
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** — Visual comparison of original vs modern design
 - **[modern/README.md](modern/README.md)** — Reference design: how it should have been built
-- **[MIGRATION.md](MIGRATION.md)** — How to adapt the reference design for production
+- **[MIGRATION.md](MIGRATION.md)** — Why this is not a production starter kit
 - **[FAQ.md](FAQ.md)** — Frequently asked questions
-- **[QUICKSTART.md](QUICKSTART.md)** — Quick start guide for new contributors
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Guidelines for contributing to this archive
+- **[QUICKSTART.md](QUICKSTART.md)** — Run the `modern/` tests
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — What this archive accepts
+- **[ROADMAP.md](ROADMAP.md)** — In scope vs out of scope

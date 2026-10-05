@@ -9,10 +9,14 @@ JSearch is a Java applet from 1999-2002 that aggregated search results from mult
 **No.** Applets were removed from browsers (2015-2021) and from the JDK (deprecated in JDK 9, removed in JDK 11). The scraped engines are also dead or blocking.
 
 ### What is `modern/`?
-A **reference design** showing how JSearch should have been built with modern practices: component separation, `ExecutorService`, immutable results, and 35 tests. It compiles and runs on JDK 11+, but doesn't connect to any network.
+A **design study** of how JSearch should have been structured: component
+separation, `ExecutorService`, immutable results, and tests against 2001 HTML
+captures. It compiles on JDK 11+. Default tests use fixtures. It is not a
+search product.
 
 ### Is this a revival?
-**No.** The original source is frozen. `modern/` is a design study, not a port.
+**No.** The original source is frozen. `modern/` is a teaching sketch, not a
+port and not a metasearch service.
 
 ---
 
@@ -33,14 +37,9 @@ The March 2002 patch tried to fix a deadlock by using `synchronized void showRes
 `getEngData()` uses the **URL as Hashtable key**. Two engines sharing a URL (English Google and Chinese Google both use `http://www.google.com/`) causes one to overwrite the other silently.
 
 ### How many tests are there?
-**35 tests** covering:
-- Engine parsing (5 tests)
-- Engine identity and URL building (3 tests)
-- HTML scraping (5 tests)
-- Result collection and dedup (3 tests)
-- Search service concurrency (3 tests)
-- JSON API scraping (7 tests)
-- Archive fixtures (9 tests)
+Run `cd modern && ./build.ps1 -Test` (or `./build.sh -t`) and trust that count.
+They cover engine parsing, identity, HTML scraping, concurrent dedup,
+`SearchService`, JSON/HTTP seams, the local demo server, and archive fixtures.
 
 ---
 
@@ -50,7 +49,8 @@ The March 2002 patch tried to fix a deadlock by using `synchronized void showRes
 **No.** `Sources/` and `versions/` are frozen artifacts. The only exception is the documented deadlock patch in `Sources/SearchThread.java`.
 
 ### Can I add features to `modern/`?
-**Yes.** Bug fixes, new tests, performance improvements, and new scraper implementations are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Bug fixes and tests that pin archive behaviour, yes. New live engines, a hosted
+API, or a production UI, no. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ### How do I run tests?
 ```powershell

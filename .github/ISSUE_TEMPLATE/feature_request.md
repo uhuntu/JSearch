@@ -22,5 +22,7 @@ Is this for:
 - [ ] Build system / CI
 - [ ] Archive preservation
 
+Live search engines, a hosted API, and production UI are out of scope. See ROADMAP.md.
+
 ## Additional context
 Add any other context, code examples, or references about the feature request here.

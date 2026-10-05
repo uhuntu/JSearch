@@ -5,9 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+The 1.2.3 / 2.0.0.0 entries below are the **2002 product**. Unreleased entries
+are archive housekeeping. This repo does not version a live search service.
+
 ## [Unreleased]
 
-### Added
+### Changed
+- Stated the project identity: archive plus teaching sketch, not a search product
+- `ROADMAP.md`, `CONTRIBUTING.md`, `MIGRATION.md`, and related docs now match that scope
+
+### Added (archive pass)
 - `docs/ARCHITECTURE.md` — Mermaid diagrams comparing original vs modern design
 - `docs/ANALYSIS.md` — Detailed code analysis extracted from README
 - `CONTRIBUTING.md` — Guidelines for contributing to this archive
@@ -16,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.github/workflows/tests.yml` — GitHub Actions CI for automated testing
 - `.gitattributes` — Protect GBK-encoded files from accidental conversion
 
-### Changed
+### Changed (archive pass)
 - `modern/README.md` — Updated build instructions to reference build scripts
 - `README.md` — Added "Further reading" section linking to new documentation
 

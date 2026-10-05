@@ -13,7 +13,7 @@
 
 JSearch 是一个诞生于 1999–2002 年的 Java **Applet** 元搜索引擎程序。它能够将搜索请求并发分发到多个搜索引擎（如 Google、早期百度等），抓取并解析返回的 HTML 结果区块，最终合并为统一去重、包含标题、链接与摘要的搜索结果列表。原项目使用微软 **Visual J++ 6.0** 开发，并严格依据中国国家软件文档标准 **GB8567-88** 完成全套软件工程文档编制。
 
-本代码仓库是一个**历史软件档案（Archive）**。原始程序因历史技术环境变迁已无法在现代环境中直接构建或运行（详见[为何无法直接复活](#为何无法直接复活)）。本仓库对其进行了系统的抢救、整理与考据，以呈现其完整的演进历史与工程设计价值。
+本代码仓库是一个**历史软件档案（Archive）**，不是搜索产品。原始程序已无法在现代环境中直接构建或运行（详见[为何无法直接复活](#为何无法直接复活)）。`modern/` 是对照 2002 年设计的可编译教学草图与本地缺陷演示，不是可部署的元搜索服务。
 
 ---
 
@@ -131,21 +131,13 @@ versions/                    历史保存的其余三个版本快照（2000-08�
 
 ---
 
-## 现代参考实现与交互 Web 演示 (`modern/`)
+## 现代参考草图 (`modern/`)
 
-为了在现代 JDK 环境中生动展示其并发聚合与去重算法，仓库在 `modern/` 目录下提供了一套**基于 JDK 11+ 标准库构建的现代参考工程**（零第三方依赖）：
-
-- **无依赖并发服务：** 基于 `ExecutorService` 和 `ResultCollector` 保证绝对线程安全的去重与计数。
-- **39 项全覆盖自动化测试：** 涵盖引擎解析、去重并发竞态、JSON API 解析，并直接以 2001 年留存的真实 HTML 文件为测试夹具（Archive Fixtures）。
-- **内置轻量级 Web 演示界面与 REST API：** 无需外部 Web 容器即可直接在现代浏览器中交互体验元搜索、实时去重指标以及 2002 历史缺陷对照模式。
+`modern/` 用 JDK 11+ 标准库对照说明 2002 年设计本可如何拆分（零第三方依赖）。默认测试使用仓库内 2001 年 HTML 夹具，不访问现网搜索引擎。`.\build.ps1 -Web` 只是本地演示当年用 URL 做引擎主键会丢掉中文 Google，不是对外 API。
 
 ```powershell
-# 运行全部 39 项测试
 cd modern
 .\build.ps1 -Test
-
-# 启动交互式 Web 演示界面 (http://localhost:8080)
-.\build.ps1 -Web
 ```
 
 ---
@@ -155,9 +147,7 @@ cd modern
 - **[ANALYSIS.md](docs/ANALYSIS.md)** — 详细设计缺陷分析与并发死锁剖析
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** — 原始设计与现代设计的架构对比图解
 - **[modern/README.md](modern/README.md)** — 现代参考实现设计文档与使用指南
-- **[MIGRATION.md](MIGRATION.md)** — 架构迁移与生产落地参考指南
+- **[MIGRATION.md](MIGRATION.md)** — 为何这不是生产脚手架
 - **[FAQ.md](FAQ.md)** — 常见问题解答
-- **[INDEX.md](INDEX.md)** — 完整文档索引
-- **[GLOSSARY.md](GLOSSARY.md)** — 术语表
-- **[ROADMAP.md](ROADMAP.md)** — 项目后续路线图
+- **[ROADMAP.md](ROADMAP.md)** — 范围内 / 范围外
 - **[PROVENANCE.md](PROVENANCE.md)** — 数字化抢救与版本溯源记录
