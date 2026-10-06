@@ -192,7 +192,7 @@ List<SearchResult> results = scraper.scrape(engine, html);
 | **Cyclomatic complexity** | High (nested switches) | Low (single responsibility) |
 | **Cognitive load** | 906 lines in one file | ~140 lines per file |
 | **Change impact** | Global (everything coupled) | Local (component isolated) |
-| **Test feedback** | None | Instant (35 tests) |
+| **Test feedback** | None | Instant (44 tests) |
 
 ## Conclusion
 
