@@ -10,6 +10,18 @@ are archive housekeeping. This repo does not version a live search service.
 
 ## [Unreleased]
 
+### Fixed
+- `modern/WebServer.java` returned a captured 2001 page for **any** query.
+  `fetchPageContent()` picked a fixture from the engine URL and never compared
+  it against the query — while its own comment said the fixtures were for
+  `"java"`. So a search for `applet` came back with ten links to sun.com and
+  java.apache.org, and the UI presented them as an answer to `applet`, with
+  every metric on screen describing the wrong question. A captured page now
+  answers only the query it was captured against (`java` for
+  `google_en.html` / `lycos_en.html`, `西二在线` for `google_cn.html` /
+  `baidu_cn.html`); anything else falls through to the synthetic pages.
+  Covered by a new test that fails against the old behaviour.
+
 ### Changed
 - Stated the project identity: archive plus teaching sketch, not a search product
 - `ROADMAP.md`, `CONTRIBUTING.md`, `MIGRATION.md`, and related docs now match that scope
@@ -19,6 +31,10 @@ are archive housekeeping. This repo does not version a live search service.
   Its hardcoded `c:\Users\...` default has been replaced by the script's own
   repository root, and `docs/txts/` is globbed so the script carries no
   non-ASCII of its own.
+- `WebServer` decodes `ENGINES/lycos_en.html` as ISO-8859-1, matching what
+  `EncodingGuard` records for it, instead of GBK.
+- Stale test counts in `modern/README.md`, `docs/ARCHITECTURE.md`, and
+  `docs/COMPARISON.md` now say 44.
 
 ### Added
 - `modern/src/test/java/jsearch/EncodingGuard.java` — same check without needing

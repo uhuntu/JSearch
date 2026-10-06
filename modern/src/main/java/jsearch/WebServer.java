@@ -4,9 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -19,7 +17,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +41,24 @@ public final class WebServer implements AutoCloseable {
     private final int port;
     private final Path archiveRoot;
     private final List<Engine> allEngines;
+
+    /**
+     * The query each captured page in {@code ENGINES/} was saved for.
+     *
+     * <p>Each of these four pages is one real answer to one real query, and a
+     * fixture only means anything next to the question it was captured against.
+     * Verified against the search box in each saved page.
+     */
+    private static final Map<String, String> CAPTURED_QUERIES = capturedQueries();
+
+    private static Map<String, String> capturedQueries() {
+        Map<String, String> queries = new LinkedHashMap<>();
+        queries.put("google_en.html", "java");      // <title>Google搜索: java</title>
+        queries.put("lycos_en.html", "java");      // Search for: "java"
+        queries.put("google_cn.html", "西二在线"); // name=q value="西二在线"
+        queries.put("baidu_cn.html", "西二在线");  // name=word value="西二在线"
+        return Collections.unmodifiableMap(queries);
+    }
 
     public WebServer(int port) throws IOException {
         this.archiveRoot = findArchiveRoot();
@@ -128,12 +143,7 @@ public final class WebServer implements AutoCloseable {
             Path enginesFile = root.resolve("Releases").resolve("JSEngines.txt");
             if (Files.isRegularFile(enginesFile)) {
                 try {
-                    Charset cs = StandardCharsets.UTF_8;
-                    try {
-                        cs = Charset.forName("GBK");
-                    } catch (Exception ignored) {
-                    }
-                    String text = new String(Files.readAllBytes(enginesFile), cs);
+                    String text = new String(Files.readAllBytes(enginesFile), archiveCharset());
                     List<Engine> list = new ArrayList<>(EngineRepository.parse(text));
                     // Also add Lycos from ENGINES/ if not present
                     list.add(new Engine("Lycos / Lycos", "English",
@@ -367,32 +377,81 @@ public final class WebServer implements AutoCloseable {
     }
 
     private String fetchPageContent(String url, String query) {
-        // If we have captured archive fixtures and query is "java", return authentic 2001 pages
+        // The archive captured one real page per engine, and each of those pages is
+        // the answer to one specific query: google_en.html and lycos_en.html were
+        // captured for "java", google_cn.html and baidu_cn.html for the Chinese
+        // query in their own search box. A fixture is only a fixture for the query
+        // it was captured against — handing google_en.html back for "applet" would
+        // return ten 2001 links about Java under a search for something else, and
+        // the numbers the UI reports would all be about the wrong question.
+        // Anything else falls through to the synthetic pages below.
         if (archiveRoot != null) {
-            String filename = null;
-            if (url.contains("lr=lang_zh-CN")) {
-                filename = "google_cn.html";
-            } else if (url.contains("google.com")) {
-                filename = "google_en.html";
-            } else if (url.contains("baidu.com")) {
-                filename = "baidu_cn.html";
-            } else if (url.contains("lycos.com")) {
-                filename = "lycos_en.html";
-            }
-            if (filename != null) {
+            String filename = fixtureFor(url);
+            String capturedQuery = capturedQueryFor(filename);
+            if (filename != null && capturedQuery != null
+                    && capturedQuery.equalsIgnoreCase(query.trim())) {
                 Path p = archiveRoot.resolve("ENGINES").resolve(filename);
                 if (Files.isRegularFile(p)) {
                     try {
-                        Charset cs = StandardCharsets.UTF_8;
-                        try { cs = Charset.forName("GBK"); } catch (Exception ignored) {}
-                        return new String(Files.readAllBytes(p), cs);
-                    } catch (IOException ignored) {}
+                        return decodeArchivePage(p);
+                    } catch (IOException ignored) {
+                    }
                 }
             }
         }
 
         // Dynamic synthetic vintage search engine results for arbitrary queries
         return generateSyntheticPage(url, query);
+    }
+
+    /** The captured page this engine URL stands for, or null if it has none. */
+    private static String fixtureFor(String url) {
+        if (url.contains("lr=lang_zh-CN")) {
+            return "google_cn.html";
+        } else if (url.contains("google.com")) {
+            return "google_en.html";
+        } else if (url.contains("baidu.com")) {
+            return "baidu_cn.html";
+        } else if (url.contains("lycos.com")) {
+            return "lycos_en.html";
+        }
+        return null;
+    }
+
+    /**
+     * The query a captured page was actually saved for, read out of that page's
+     * own search box. Returned only for a page that is present, so a missing
+     * fixture cannot claim to answer anything.
+     */
+    private String capturedQueryFor(String filename) {
+        if (filename == null) {
+            return null;
+        }
+        Path p = archiveRoot.resolve("ENGINES").resolve(filename);
+        if (!Files.isRegularFile(p)) {
+            return null;
+        }
+        return CAPTURED_QUERIES.get(filename);
+    }
+
+    /**
+     * Decodes a captured page the way it was saved. Three of the four are GBK;
+     * {@code lycos_en.html} is the one file in the archive that was never Chinese
+     * and is ISO-8859-1, so decoding it as GBK corrupts its few high bytes.
+     */
+    private static String decodeArchivePage(Path page) throws IOException {
+        Charset cs = "lycos_en.html".equals(page.getFileName().toString())
+                ? StandardCharsets.ISO_8859_1
+                : archiveCharset();
+        return new String(Files.readAllBytes(page), cs);
+    }
+
+    private static Charset archiveCharset() {
+        try {
+            return Charset.forName("GBK");
+        } catch (Exception ignored) {
+            return StandardCharsets.UTF_8;
+        }
     }
 
     private String generateSyntheticPage(String url, String query) {

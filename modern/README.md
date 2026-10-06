@@ -75,7 +75,7 @@ a public API.
 ## Tests
 
 ```powershell
-.\build.ps1 -Test    # 43 tests, plain JDK, no JUnit or build tool needed
+.\build.ps1 -Test    # 44 tests, plain JDK, no JUnit or build tool needed
 ```
 
 They cover engine parsing (shared URLs, duplicate identity, truncated/empty/CRLF
@@ -98,7 +98,7 @@ found by strict decoding rather than by looking at it. Run it on its own with
 `java -cp out jsearch.EncodingGuard` for the full per-file list, including any
 file that no expectation covers yet.
 
-Writing them found two real bugs:
+Writing them found three real bugs:
 
 - `ResultCollector` had an error listener field and `fireError()` but no way to
   register a listener, so every engine failure was silently dropped.
@@ -109,6 +109,15 @@ Writing them found two real bugs:
   the tail of `</table>` — so the first Baidu block ran to the end of the page
   and the other nine results were never seen. The original's character window
   compared at every position, tags included, so it did match. Fixed.
+- `WebServer.fetchPageContent()` returned a captured page for *any* query: it
+  chose a fixture from the engine URL and never looked at the query, though its
+  own comment said the fixtures were for `"java"`. Searching `applet` returned
+  ten 2001 links to sun.com and java.apache.org, and the UI reported them as the
+  answer. A captured page now answers only the query it was captured against —
+  `google_en.html` and `lycos_en.html` for `java`, `google_cn.html` and
+  `baidu_cn.html` for `西二在线` — and everything else falls through to the
+  synthetic pages. It also decoded `lycos_en.html` as GBK, though it is the one
+  file in the archive that is ISO-8859-1.
 
 ## What it demonstrates
 

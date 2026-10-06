@@ -75,6 +75,8 @@ public final class Tests {
         test("web server provides engines list", Tests::webServerEnginesApi);
         test("web server executes search query", Tests::webServerSearchApi);
         test("web server compare API detects legacy URL collision defect", Tests::webServerCompareApi);
+        testArchive("web server serves a captured page only for the query it captured",
+                Tests::webServerFixturesOnlyForTheirCapturedQuery);
 
         // The archive's own captured pages, as fixtures
         testArchive("shipped engine file yields three engines, not two", Tests::shippedEnginesSurvive);
@@ -664,6 +666,46 @@ public final class Tests {
             String json = f.fetch("http://127.0.0.1:" + ws.getPort() + "/api/compare?q=java");
             check(json.contains("\"defectExplanation\":") && json.contains("\"lostEngines\":"), "compare API missing defect fields");
             check(json.contains("\"legacy\":") && json.contains("\"modern\":"), "compare API missing legacy/modern fields");
+        }
+    }
+
+    /**
+     * A captured page answers the query it was captured for, and only that one.
+     *
+     * <p>{@code fetchPageContent} used to return the 2001 Google capture for
+     * whatever was asked, because it never looked at the query at all — its own
+     * comment said the fixtures were for "java". So a search for "applet" came
+     * back with ten 2001 links to sun.com, java.apache.org and Microsoft, and the
+     * UI presented them as an answer to "applet".
+     */
+    private static void webServerFixturesOnlyForTheirCapturedQuery() throws Exception {
+        try (WebServer ws = new WebServer(0)) {
+            ws.start();
+            HttpPageFetcher f = new HttpPageFetcher();
+            String base = "http://127.0.0.1:" + ws.getPort();
+
+            // The captured query still gets the real 2001 page.
+            String java = f.fetch(base + "/api/search?q=java&engines=Google");
+            check(java.contains("java-pro.com"),
+                    "the 2001 Google capture should still answer 'java': " + java);
+
+            // Any other query must not be answered with the capture. Note that
+            // sun.com/java is deliberately NOT the probe here: the synthetic
+            // pages reuse it as their deduplication example, so it appears in
+            // both. java-pro.com exists only in the genuine capture.
+            String other = f.fetch(base + "/api/search?q=" + encode("ZZQQXX-unicorn-9271") + "&engines=Google");
+            check(!other.contains("java-pro.com") && !other.contains("javaarchives"),
+                    "the 2001 Google capture was served for an unrelated query: " + other);
+            check(other.contains("ZZQQXX-unicorn-9271"),
+                    "results should be about the query actually asked: " + other);
+        }
+    }
+
+    private static String encode(String value) {
+        try {
+            return java.net.URLEncoder.encode(value, StandardCharsets.UTF_8.name());
+        } catch (java.io.UnsupportedEncodingException impossible) {
+            throw new AssertionError(impossible);
         }
     }
 
