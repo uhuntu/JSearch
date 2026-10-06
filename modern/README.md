@@ -41,6 +41,13 @@ make web             # local demo of the 2002 URL-key bug
 make clean           # clean build output
 ```
 
+**Maven (any platform with mvn):**
+
+```bash
+mvn test             # compile and run the test suite; any failure fails the build
+mvn package          # the same, plus a runnable jar (jsearch.Demo is the main class)
+```
+
 **Docker:**
 
 ```bash

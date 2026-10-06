@@ -31,15 +31,42 @@
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
+            <!-- The suite is a main() runner with no JUnit dependency, by
+                 design. Surefire cannot execute it: pointing it at
+                 Tests.java runs zero tests and still reports success. The
+                 suite is therefore run for real by exec-maven-plugin below,
+                 and Surefire itself is skipped. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
-                    <includes>
-                        <include>**/Tests.java</include>
-                    </includes>
+                    <skipTests>true</skipTests>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>run-test-suite</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <classpathScope>test</classpathScope>
+                            <arguments>
+                                <argument>-Dfile.encoding=UTF-8</argument>
+                                <argument>-cp</argument>
+                                <classpath/>
+                                <argument>jsearch.Tests</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
