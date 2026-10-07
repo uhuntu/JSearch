@@ -15,3 +15,6 @@ modern/target/
 
 # Kilo IDE workspace (auto-created, safe to delete)
 .kilo/
+
+# runner/ build output (tracked sources + engine table live beside it)
+runner/classes/

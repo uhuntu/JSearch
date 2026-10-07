@@ -68,7 +68,8 @@ java  -Dfile.encoding=UTF-8 -cp out jsearch.WebServer --port 8080
 
 `jsearch.WebServer` is a JDK `HttpServer` page that runs the sketch against
 2001 archive fixtures and shows, side by side, how the 2002 URL-as-key
-`Hashtable` dropped Chinese Google. HTTP routes (`/api/compare`, `/api/search`,
+`Hashtable` holds an engine's identity one stray byte away from silent loss.
+HTTP routes (`/api/compare`, `/api/search`,
 …) exist so that demo and its tests can talk to the same process. They are not
 a public API.
 
@@ -125,10 +126,15 @@ The three properties the original design got wrong:
 
 **1. Two engines may share a URL without one destroying the other.**
 `Engine`'s identity is `(name, category)` and deliberately excludes the URL. The
-shipped `JSEngines.txt` contains two engines both keyed
-`http://www.google.com/` — Chinese Google and English Google — and the original's
-`Hashtable`-keyed-on-URL collapsed them to one, silently dropping Chinese Google.
-Parsing the same file here yields both.
+shipped `JSEngines.txt` contains two engines whose URL lines differ only by a
+stray trailing space on the first — `http://www.google.com/ ` versus
+`http://www.google.com/` — so the original's URL-keyed `Hashtable` never
+actually collided while the file stayed as shipped: that invisible byte is the
+only thing that kept Chinese Google alive (confirmed by running the original
+code; see `../runner/`). Remove it — a trim, a re-encode, any editor's silent
+"fix" — and the two records collapse to one, dropping Chinese Google without a
+word. Here identity does not depend on that luck: both engines load, and a
+genuine duplicate is rejected loudly.
 
 **2. A genuinely duplicated engine is rejected, not overwritten.**
 Identity is checked before insertion, so a real duplicate is a loud error naming

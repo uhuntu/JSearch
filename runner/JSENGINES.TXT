@@ -1,0 +1,28 @@
+http://www.google.com/ 
+GB_Chinese Google / Google中文（简体）
+Chinese
+http://www.google.com/search?q=^&lr=lang_zh-CN&start=`0&sa=N
+<p><
+k - 
+
+http://www1.baidu.com/
+Baidu / 百度
+Chinese
+http://www1.baidu.com/baidu?word=^&rn=10&cl=3&pn=`0&tn=baidu
+.</d
+ble>
+
+http://www.google.com/
+Google / Google
+English
+http://www.google.com/search?q=^&start=`0&sa=N
+<p><
+k - 
+
+http://localhost:8901/
+LocalDemo / 本地演示引擎
+Chinese
+http://localhost:8901/search?q=^&page=`0
+<p><
+</p>
+

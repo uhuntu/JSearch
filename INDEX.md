@@ -12,6 +12,7 @@ archive, not to run a product.
 | [docs/ANALYSIS.md](docs/ANALYSIS.md) | Design defects |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Original vs sketch |
 | [modern/README.md](modern/README.md) | How to run the teaching sketch |
+| [runner/README.md](runner/README.md) | How to run the untouched 2002 applet itself |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | What is accepted |
 | [ROADMAP.md](ROADMAP.md) | In scope vs out of scope |
 | [MIGRATION.md](MIGRATION.md) | Why this is not a starter kit |

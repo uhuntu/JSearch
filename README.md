@@ -144,6 +144,7 @@ docs/                        GB8567-88 documentation set, Jan 2002 (8 .doc + txt
 refs/                        GB8567-88 standard archive, 使用说明书, related material
 artifacts/Classes/           compiled .class output (stale, see caveat below)
 modern/                       compiling reference redesign + tests (not the original)
+runner/                       runs the untouched Sources/ applet on a modern JDK (local shim + demo engine)
 versions/                     the other three generations
   2000-08/                   v1.2.3 baseline
   2001-12/JSApplet/          last large version
@@ -166,7 +167,7 @@ The code-level findings live in [ANALYSIS.md](docs/ANALYSIS.md):
 
 - what changed from 1.2.3 to 2.0.0.0
 - the "deadlock patch" that does not work (and the fix merged from `fix/showresult-locking`)
-- the URL-keyed `Hashtable` that silently drops search engines
+- the URL-keyed `Hashtable` that is one stray byte away from silently dropping search engines (running the original code settled what the shipped data actually does — see [runner/](runner/README.md))
 - what a better design would look like, implemented as a compiling reference in [modern/](modern/README.md)
 
 ---

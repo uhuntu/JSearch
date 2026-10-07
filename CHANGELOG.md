@@ -10,7 +10,28 @@ are archive housekeeping. This repo does not version a live search service.
 
 ## [Unreleased]
 
+### Added
+- `runner/`: a local runner that plays the part IE + the Java Plug-in used to
+  play, so the untouched original `Sources/` applet runs on a modern JDK
+  (tested on 17) — a `Frame`, the applet parameters, and an engine table that
+  is the shipped `Releases/JSEngines.txt` converted to UTF-8 with a fourth,
+  `LocalDemo` record served canned 2002-marker pages by `DemoServer.py`.
+  `--go` / `--snap=FILE` support unattended verification; `first-light.png`
+  is the first run's actual output (two results, dedup applied, preview
+  rendered). This is the only path in the repo that executes the original
+  artifact itself; `modern/` remains the redesign, not the original.
+
 ### Fixed
+- The URL-keyed `Hashtable` analysis was wrong about the shipped data. Record
+  1 of `Releases/JSEngines.txt` ends in a trailing space, so its key never
+  collided with English Google's and nothing was ever dropped: running the
+  original code loads three engines from three records, and the Chinese
+  category lists both Google entries. `docs/ANALYSIS.md`, `README.md`,
+  `README.zh-CN.md` and `modern/README.md` now state the defect accurately —
+  an engine's identity held one stray byte away from silent data loss —
+  instead of claiming the shipped file lost an engine.
+
+### Changed
 - `modern/WebServer.java` returned a captured 2001 page for **any** query.
   `fetchPageContent()` picked a fixture from the engine URL and never compared
   it against the query — while its own comment said the fixtures were for

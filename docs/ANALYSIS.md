@@ -259,19 +259,31 @@ engDataHt.put(engDataHtHead, engDataHtBody);   // engDataHtHead is the URL line
 ```
 
 A URL is not an identifier. The shipped `Releases/JSEngines.txt` defines three
-engines, and two of them share their URL:
+engines, and two of them appear to share their URL:
 
 | Key | Name | Category |
 |---|---|---|
 | `http://www.google.com/` | Google / Google | English |
 | `http://www1.baidu.com/` | Baidu / 百度 | Chinese |
-| **`http://www.google.com/`** | **GB_Chinese Google** | **Chinese** |
+| `http://www.google.com/` | GB_Chinese Google | Chinese |
 
-Parsing that file the way the code does — 6 fields plus a blank line per record,
-last write wins — **three records in, two engines out.** The Chinese Google
-entry is overwritten by the English one and disappears from the category list
-without a word to the user. Anyone who ever wondered why "Chinese" showed only
-Baidu, this is why: the second engine was never loaded.
+Parsing that file the way the code does — 6 fields plus a blank line per
+record, last write wins — *should* be **three records in, two engines out.**
+
+It is not, and the reason is a single invisible byte. Record 1's key is
+`http://www.google.com/ ` **with a trailing space**, so the two Google keys
+are distinct strings and nothing collides. Running the original code against
+the shipped file — see `runner/`, which exists to settle exactly this kind of
+question — loads three engines from three records (four from four once the
+demo engine is appended), and the Chinese category lists both Google entries.
+
+The defect is real; the shipped data just happens to dodge it. Delete that one
+space — or trim the line, or re-encode the file, anything a well-meaning
+editor might do — and the Chinese Google entry is overwritten by the English
+one and disappears from the category list without a word to the user. A table
+that keeps identity safe only while an unnoticed stray byte sits in a data
+file is, if anything, more treacherous than one that fails loudly: the bug
+ships dormant, and no test can see it.
 
 The fix is a data model, not a patch: identity belongs to an object
 (`name` + `category`), carried in a `List<Engine>`, with the format itself
