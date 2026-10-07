@@ -177,10 +177,14 @@ public class JSearchRunner {
     static void watchForResults(final JSApplet applet) {
         new Thread(new Runnable() {
             public void run() {
+                int prev = 0;
                 for (int i = 0; i < 100; i++) {
                     try { Thread.sleep(300); } catch (InterruptedException e) { return; }
-                    if (JSApplet.resultLi.getItemCount() > 0) {
-                        System.out.println("[runner] results in list = " + JSApplet.resultLi.getItemCount()
+                    int now = JSApplet.resultLi.getItemCount();
+                    // The scraper adds results one by one; wait until the
+                    // count is stable across two polls before reporting it.
+                    if (now > 0 && now == prev) {
+                        System.out.println("[runner] results in list = " + now
                                 + " (the page carried 3 blocks; the URL-duplicated one is deduped)");
                         EventQueue.invokeLater(new Runnable() {
                             public void run() {
@@ -196,6 +200,7 @@ public class JSearchRunner {
                         });
                         return;
                     }
+                    prev = now;
                 }
                 System.out.println("[runner] no results after 30s");
             }

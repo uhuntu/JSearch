@@ -18,6 +18,15 @@ cd runner
 ./run.sh          # opens the applet window; type a query, press 开始搜索 or Enter
 ```
 
+On Windows you have three ways in: `./run.sh` from Git Bash; `bash ./run.sh`
+straight from PowerShell (Git's bash is first on PATH); or `.\run.ps1` from
+PowerShell, which needs no Git Bash at all. Note that plain `.\run.sh` in
+PowerShell silently does nothing — PowerShell does not execute `.sh`
+scripts. `.\run.ps1` needs script execution to be allowed on your machine;
+if it is blocked, run it once as
+`powershell -ExecutionPolicy Bypass -File run.ps1`, or set
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (per-user, one time).
+
 `run.sh` compiles into `classes/` on first run (JDK 17 tested; any JDK whose
 `java.applet` still exists works — the API is deprecated for removal, so very
 new JDKs may eventually break this), starts `DemoServer.py` on
@@ -41,9 +50,10 @@ results land, and the preview text.
 | `JSearchRunner.java` | The IE/Plug-in substitute: `AppletStub` + `AppletContext`, the applet parameters (`currUrl`, `_readTxt`, options), a plain `Frame` window |
 | `DemoServer.py` | A canned results page written to the 2002 scraper's marker format (`<p><` block start, `ref=` URL, `</a>` title, `</p>` block end); third block duplicates the first URL so dedup is visible |
 | `JSENGINES.TXT` | The shipped `Releases/JSEngines.txt` converted to UTF-8, with a 4th record appended: `LocalDemo`, pointing at the demo server |
+| `fontconfig.properties` | Composite-font mapping passed via `-Dsun.awt.fontconfig`; without it the AWT peers draw boxes for every Chinese string on Windows (see below) |
 | `first-light.png` | Output of the first verified run |
 
-Two things in `JSearchRunner` deserve explanation, because both are shims for
+Three things in this directory deserve explanation, because all are shims for
 the environment, not changes to the applet:
 
 - **`keepAuthoredGeometry()`** — the 2002 VMs laid the applet out from the
@@ -65,6 +75,20 @@ the environment, not changes to the applet:
   Note the leading blank line in the appended record: the parser reads six
   lines plus a separator per record, and the shipped file does not end with
   one.
+
+- **Windows launch flags (in `run.sh`, mirrored by `run.ps1`)** — two, both
+  tested on JDK 11 on a
+  Chinese-locale Windows 11 box. `-Dfile.encoding=UTF-8`: the applet reads
+  `JSENGINES.TXT` and the result pages with the platform charset, which is
+  GBK here, so every Chinese string decodes as mojibake without it. (JDK 18+
+  defaults to UTF-8 and no longer needs it.) `-Dsun.awt.fontconfig=
+  fontconfig.properties`: the AWT heavyweight peers build their GDI font
+  from the logical font's alphabetic component, which on this stack carries
+  no CJK glyphs — labels, list items, buttons and choices draw boxes even
+  when the strings are correct (only the preview pane's edit control
+  font-links on its own). The bundled file re-points that component at a
+  CJK face, restoring the rendering the applet got from a Chinese Windows
+  2000 system font.
 
 ## What running it settled
 
