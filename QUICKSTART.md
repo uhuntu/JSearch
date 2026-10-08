@@ -1,6 +1,7 @@
 # Quick Start Guide
 
-Run the teaching sketch. The 1999–2002 applet itself cannot run.
+Run the teaching sketch, or the untouched 1999–2002 applet itself via
+`runner/` — it does still run on a modern JDK.
 
 ## Prerequisites
 
@@ -48,6 +49,7 @@ JSearch/
 │   ├── src/main/java/    # Reference implementation
 │   ├── src/test/java/    # Tests (incl. archive fixtures)
 │   └── build.ps1         # Build script
+├── runner/               # Runs the untouched original applet on a modern JDK
 ├── README.md             # Main documentation
 ├── CONTRIBUTING.md       # Contribution guidelines
 └── CHANGELOG.md          # Version history
@@ -62,13 +64,42 @@ JSearch/
 
 ## Common tasks
 
-### Run the demo
+### Run the Web UI
+
+```powershell
+cd modern
+.\build.ps1 -Web            # add -Port 8081 if 8080 is taken
+```
+
+```bash
+cd modern
+bash build.sh -w -p 8081
+```
+
+Then open http://localhost:8081 — search the archive fixtures, switch the
+architecture mode to "1999 Buggy" to see the URL-key emulation, or
+"Side-by-Side" to compare both designs live.
+
+### Run the console demo
 
 ```powershell
 cd modern
 .\build.ps1
 java "-Dfile.encoding=UTF-8" -cp out jsearch.Demo
 ```
+
+### Run the untouched original 2002 applet
+
+```bash
+cd runner
+./run.sh                    # opens the original AWT window
+```
+
+Type a query and press 开始搜索. The demo server on `127.0.0.1:8901` starts
+automatically; only the `LocalDemo` engine can still answer — selecting the
+historical engines shows the original's own error handling, which is authentic
+behaviour. Unattended: `./run.sh --go --snap=/tmp/snap.png`. See
+[runner/README.md](runner/README.md).
 
 ### Run tests only
 

@@ -79,6 +79,10 @@ are archive housekeeping. This repo does not version a live search service.
   exactly what one trim or re-encode would have done. The compare test asserts
   the explanation carries the trailing-space fact and no longer the disproven
   phrasing.
+- `QUICKSTART.md` still opened with "the 1999–2002 applet itself cannot run" —
+  written before `runner/` existed, and it never mentioned the Web UI. It now
+  documents both paths: `build.sh -w` / `build.ps1 -Web` for the Web UI and
+  `run.sh` for the original applet, and lists `runner/` in the structure.
 
 ### Changed
 - `modern/WebServer.java` returned a captured 2001 page for **any** query.
