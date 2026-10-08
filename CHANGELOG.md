@@ -20,16 +20,41 @@ are archive housekeeping. This repo does not version a live search service.
   is the first run's actual output (two results, dedup applied, preview
   rendered). This is the only path in the repo that executes the original
   artifact itself; `modern/` remains the redesign, not the original.
+- A `runner` CI job, so that claim is checked on every push instead of resting
+  on one screenshot. It runs the untouched applet headless under `xvfb` with
+  `run.sh --go`, then asserts the evidence trail the runner prints: 4 of 4
+  engine records loaded (the URL-key collision that the old analysis reported
+  never actually happened), 3 of 4 listed in the Chinese category with English
+  Google absent, the demo engine selected, 2 results out of 3 scraped blocks
+  (the original dedup working), and a preview read back out of the applet's own
+  result table. `runner/verify.sh` holds the assertions and can be pointed at
+  any log, so the same check runs locally; all of them are on ASCII the runner
+  prints verbatim, so they do not depend on the Chinese text decoding a
+  particular way. `runner/verify-fontconfig.sh` covers the platform decision in
+  `run.sh` described below.
 
 ### Fixed
 - The URL-keyed `Hashtable` analysis was wrong about the shipped data. Record
   1 of `Releases/JSEngines.txt` ends in a trailing space, so its key never
   collided with English Google's and nothing was ever dropped: running the
-  original code loads three engines from three records, and the Chinese
-  category lists both Google entries. `docs/ANALYSIS.md`, `README.md`,
-  `README.zh-CN.md` and `modern/README.md` now state the defect accurately —
-  an engine's identity held one stray byte away from silent data loss —
-  instead of claiming the shipped file lost an engine.
+  original code loads three engines from three records. `docs/ANALYSIS.md`,
+  `README.md`, `README.zh-CN.md` and `modern/README.md` now state the defect
+  accurately — an engine's identity held one stray byte away from silent data
+  loss — instead of claiming the shipped file lost an engine.
+- That correction went one step further than the evidence supports, and
+  `FAQ.md` was missed entirely. Three files claimed "the Chinese category lists
+  both Google entries"; it never did. `GB_Chinese Google` is Chinese and plain
+  `Google` is English, so the two records land in different categories — which
+  the table ten lines above the claim in `docs/ANALYSIS.md` already showed.
+  Selecting Chinese lists 2 of the 3 shipped engines (3 of 4 once `LocalDemo`
+  is appended), verified against the applet's own output. `FAQ.md` still
+  carried the original, disproven "silently dropped due to URL key collision",
+  even though the entry above lists the files that had been corrected.
+- `runner/run.sh` passed `-Dsun.awt.fontconfig=fontconfig.properties` on every
+  platform, though that file names Windows CJK faces and exists to work around
+  a GDI-specific font defect. On Linux or macOS it replaced the platform's own
+  font configuration with a mapping it cannot satisfy. The flag is now applied
+  on Windows only.
 
 ### Changed
 - `modern/WebServer.java` returned a captured 2001 page for **any** query.

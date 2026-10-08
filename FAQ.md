@@ -82,7 +82,7 @@ GB8567-88 is the Chinese national standard for software documentation. The proje
 ### What engines did JSearch support?
 The shipped `JSEngines.txt` defines three engines:
 - **Google** (English)
-- **GB_Chinese Google** (Chinese) — *silently dropped due to URL key collision*
+- **GB_Chinese Google** (Chinese) — *survives only because its URL key ends in a trailing space, so the URL-keyed `Hashtable` never collided; trim it and the entry is silently lost*
 - **Baidu** (Chinese)
 
 Four HTML pages were captured on 2001-12-27: `google_en.html`, `google_cn.html`, `baidu_cn.html`, and `lycos_en.html` (never shipped).

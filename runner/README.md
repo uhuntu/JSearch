@@ -43,6 +43,42 @@ The `--go` run prints an evidence trail to stdout: how many engines the table
 holds, which engines are listed and selected, when the search starts, how many
 results land, and the preview text.
 
+## CI checks that this still works
+
+`first-light.png` is a snapshot of one run on one day. The `runner` job in
+`../.github/workflows/tests.yml` re-establishes it on every push: it runs the
+untouched applet headless under `xvfb`, then runs `verify.sh` over the trail.
+The applet's window never closes, so the run is capped and `timeout`'s exit
+124 is expected — the log is the artefact, and the assertions are the gate.
+
+What the assertions protect, and why each is worth a line:
+
+- **4 of 4 engine records load.** The URL-key collision this archive's analysis
+  used to report never actually happened, because record 1's key carries a
+  trailing space. Trim it and this is the assertion that fails.
+- **3 engines listed in the Chinese category, and no `engine[3]`.** The two
+  Google records are in different categories, so the Chinese list never held
+  both. This one exists because the prose repeatedly said it did.
+- **`LocalDemo` is the selected engine** — the deterministic setup found the
+  only engine that can still answer.
+- **2 results from 3 scraped blocks** — the original 4-character sliding-window
+  scraper and its dedup, unchanged.
+- **A preview read back** out of the applet's own result table.
+
+All of them match ASCII the runner prints verbatim, so the check never depends
+on the Chinese strings decoding a particular way in the log. The demo server's
+own access line is deliberately *not* asserted: `run.sh` reuses an already
+listening 8901, so that line only appears in the log of whichever run happened
+to start the server.
+
+```sh
+./run.sh --go > run.log 2>&1     # or: .\run.ps1 --go > run.log 2>&1
+./verify.sh run.log              # 11 checks, exit 0 or 1
+```
+
+On Linux, install a CJK font first (`fonts-noto-cjk`) or AWT will draw every
+label as a box — the run still passes, it just is not proving much.
+
 ## The pieces
 
 | File | Role |
@@ -50,7 +86,9 @@ results land, and the preview text.
 | `JSearchRunner.java` | The IE/Plug-in substitute: `AppletStub` + `AppletContext`, the applet parameters (`currUrl`, `_readTxt`, options), a plain `Frame` window |
 | `DemoServer.py` | A canned results page written to the 2002 scraper's marker format (`<p><` block start, `ref=` URL, `</a>` title, `</p>` block end); third block duplicates the first URL so dedup is visible |
 | `JSENGINES.TXT` | The shipped `Releases/JSEngines.txt` converted to UTF-8, with a 4th record appended: `LocalDemo`, pointing at the demo server |
-| `fontconfig.properties` | Composite-font mapping passed via `-Dsun.awt.fontconfig`; without it the AWT peers draw boxes for every Chinese string on Windows (see below) |
+| `fontconfig.properties` | Composite-font mapping passed via `-Dsun.awt.fontconfig`; without it the AWT peers draw boxes for every Chinese string on Windows (see below). Windows only — see the launch-flag note |
+| `verify.sh` | Asserts the `--go` evidence trail. CI runs it against the log of a real run; point it at any log to check one locally |
+| `verify-fontconfig.sh` | Asserts that the font shim is applied on Windows and not elsewhere, using a faked `uname` so both branches are checkable from either platform |
 | `first-light.png` | Output of the first verified run |
 
 Three things in this directory deserve explanation, because all are shims for
@@ -88,15 +126,23 @@ the environment, not changes to the applet:
   when the strings are correct (only the preview pane's edit control
   font-links on its own). The bundled file re-points that component at a
   CJK face, restoring the rendering the applet got from a Chinese Windows
-  2000 system font.
+  2000 system font. That flag is applied **on Windows only**, and
+  `verify-fontconfig.sh` is what keeps it that way: the bundled file names
+  Windows faces and works around a GDI-specific defect, so passing it to a
+  Linux or macOS JVM would replace that platform's own font configuration with
+  a mapping it cannot satisfy. Everywhere else AWT keeps its built-in
+  behaviour.
 
 ## What running it settled
 
 **The shipped data never actually lost an engine.** `docs/ANALYSIS.md`
 originally reported that the URL-keyed `Hashtable` in `getEngData()` silently
 collapsed Chinese Google into English Google — three records in, two engines
-out. Running the code proves otherwise: all four records load as four
-engines, and the Chinese category lists both Google entries. The reason is a
+out. Running the code proves otherwise: all four records load as four engines.
+They also come back as three in the Chinese category, because the two Google
+records are in different categories — `GB_Chinese Google` is Chinese, plain
+`Google` is English — so the Chinese list never held both in the first place.
+The reason the keys stayed distinct is a
 single invisible byte: record 1's URL key is `http://www.google.com/ ` *with
 a trailing space*, so the two keys never collided. The design defect is real
 — a URL is not an identity, and the table is one stray byte, one trim, one
