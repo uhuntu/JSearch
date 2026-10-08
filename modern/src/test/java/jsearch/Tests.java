@@ -666,6 +666,8 @@ public final class Tests {
             String json = f.fetch("http://127.0.0.1:" + ws.getPort() + "/api/compare?q=java");
             check(json.contains("\"defectExplanation\":") && json.contains("\"lostEngines\":"), "compare API missing defect fields");
             check(json.contains("\"legacy\":") && json.contains("\"modern\":"), "compare API missing legacy/modern fields");
+            check(json.contains("trailing space") && !json.contains("silently discarding"),
+                    "defect explanation states the corrected history, not the disproven one");
         }
     }
 

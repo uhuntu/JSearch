@@ -69,6 +69,16 @@ are archive housekeeping. This repo does not version a live search service.
 - `README.zh-CN.md`'s "why this cannot be revived" list named three of the
   four blockers, missing that `Releases/JSearch.html` is not portable; it now
   matches the English README.
+- The modern Web UI still taught the disproven version of the engine-table
+  story. The "1999 Buggy" alert, the compare API's `defectExplanation`, and
+  the side-by-side "vanished engine" card all said English and Chinese Google
+  shared `http://www.google.com/` and the second entry silently discarded the
+  first — the claim the runner disproved and three correction rounds had fixed
+  everywhere except the UI. The texts now state the corrected history and
+  describe the emulation as what it is: normalizing the URL keys, which is
+  exactly what one trim or re-encode would have done. The compare test asserts
+  the explanation carries the trailing-space fact and no longer the disproven
+  phrasing.
 
 ### Changed
 - `modern/WebServer.java` returned a captured 2001 page for **any** query.

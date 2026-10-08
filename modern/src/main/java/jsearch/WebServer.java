@@ -275,7 +275,7 @@ public final class WebServer implements AutoCloseable {
 
             StringBuilder sb = new StringBuilder("{");
             sb.append("\"query\":").append(quote(query)).append(",");
-            sb.append("\"defectExplanation\":").append(quote("In the 1999-2002 JSearch code, getEngData() stored engines in a Hashtable keyed on URL. Because English Google and Chinese Google shared 'http://www.google.com/', the second entry overwrote the first, silently discarding Chinese Google from the search interface.")).append(",");
+            sb.append("\"defectExplanation\":").append(quote("In the 1999-2002 JSearch code, getEngData() stored engines in a Hashtable keyed on URL — a URL is not an identity, so the design sat one stray byte away from silent data loss. The shipped JSEngines.txt never actually lost an engine: record 1's URL key ends in a trailing space, so the two Google keys never collided, which running the original code confirms. This emulation normalizes the keys — what one trim or re-encode would have done — so the second Google record overwrites the first and Chinese Google vanishes from the list.")).append(",");
             sb.append("\"lostEngines\":").append(toJsonStringArray(lostEngines)).append(",");
 
             // Legacy summary
@@ -1077,7 +1077,7 @@ public final class WebServer implements AutoCloseable {
                 + "\n"
                 + "    <div class=\"alert-panel\" id=\"legacyAlert\">\n"
                 + "      <strong>⚠️ 2002 Architecture Defect Emulation Active:</strong><br>\n"
-                + "      In <code>Sources/JSApplet.java:getEngData()</code>, engines were loaded into a <code>Hashtable</code> keyed on their URL (<code>engDataHt.put(url, data)</code>). Because English Google and Chinese Google both used <code>http://www.google.com/</code>, the second engine silently overwrote the first in the hashtable. <em>Chinese Google vanished from the search list!</em>\n"
+                + "      In <code>Sources/JSApplet.java:getEngData()</code>, engines were loaded into a <code>Hashtable</code> keyed on their URL (<code>engDataHt.put(url, data)</code>). A URL is not an identity. The shipped file never actually lost an engine: record 1's URL key ends in a trailing space, so the two Google keys never collided — running the original code settles this (see <code>runner/</code>). This mode normalizes the keys, as one trim or re-encode would have, so the second Google record overwrites the first and <em>Chinese Google vanishes from the search list</em>.\n"
                 + "    </div>\n"
                 + "\n"
                 + "    <div class=\"metrics-bar\">\n"
@@ -1254,7 +1254,7 @@ public final class WebServer implements AutoCloseable {
                 + "\n"
                 + "      const lostDiv = document.createElement('div');\n"
                 + "      lostDiv.style.cssText = 'background:rgba(239,68,68,0.15); border:1px solid var(--danger); border-radius:8px; padding:0.75rem; font-size:0.8rem; color:#fca5a5;';\n"
-                + "      lostDiv.innerHTML = `<strong>Overwritten &amp; Vanished Engine:</strong><br><code>${escapeHtml(data.lostEngines.join(', '))}</code><br>Discarded by URL-key Hashtable collision.`;\n"
+                + "      lostDiv.innerHTML = `<strong>Overwritten &amp; Vanished Engine:</strong><br><code>${escapeHtml(data.lostEngines.join(', '))}</code><br>Lost when the emulation normalizes the URL keys; the shipped file kept both engines — record 1's key carried a trailing space, so no collision ever happened.`;\n"
                 + "      legCol.appendChild(lostDiv);\n"
                 + "\n"
                 + "      (data.legacy.results || []).forEach(r => renderSmallCard(legCol, r));\n"
