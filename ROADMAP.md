@@ -12,6 +12,9 @@ rate limiting, or a deployable aggregator.
 - Corrections to analysis, encoding protection, and CI that runs those tests
 - The encoding guard (`EncodingGuard`, `verify-gbk.ps1`, the `encoding` CI job),
   which now checks all original files rather than listing ones it assumes are fine
+- The `runner` CI job (`runner/verify.sh`), which is the only automated check
+  that the original applet still runs, scrapes and dedups; the other two jobs
+  never load `Sources/JSApplet.class`
 
 ## Out of scope
 

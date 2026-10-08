@@ -29,11 +29,18 @@ fi
 # the logical font's alphabetic component, which no longer contains CJK
 # glyphs, so the UI draws boxes even when the strings are correct. The
 # bundled fontconfig.properties re-points that component at a CJK face.
+#
+# Windows only, and deliberately so: that file names Windows CJK faces and
+# describes a GDI-specific defect. Handing it to a Linux or macOS JVM would
+# replace the platform's own font configuration with a mapping it cannot
+# satisfy, so everywhere else AWT keeps its built-in behaviour. (CI runs on
+# Linux and installs fonts-noto-cjk for glyph coverage instead.)
 FONTCONFIG_FLAG=""
-if [ -f fontconfig.properties ]; then
-    case "$(uname -s)" in
-        CYGWIN*|MINGW*|MSYS*) FONTCONFIG_FLAG="-Dsun.awt.fontconfig=$(cygpath -m "$PWD")/fontconfig.properties" ;;
-        *) FONTCONFIG_FLAG="-Dsun.awt.fontconfig=$PWD/fontconfig.properties" ;;
-    esac
-fi
+case "$(uname -s)" in
+    CYGWIN*|MINGW*|MSYS*)
+        if [ -f fontconfig.properties ]; then
+            FONTCONFIG_FLAG="-Dsun.awt.fontconfig=$(cygpath -m "$PWD")/fontconfig.properties"
+        fi
+        ;;
+esac
 exec java -Dfile.encoding=UTF-8 $FONTCONFIG_FLAG -cp classes JSearchRunner "$@"
