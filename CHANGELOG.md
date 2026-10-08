@@ -66,6 +66,9 @@ are archive housekeeping. This repo does not version a live search service.
   a GDI-specific font defect. On Linux or macOS it replaced the platform's own
   font configuration with a mapping it cannot satisfy. The flag is now applied
   on Windows only.
+- `README.zh-CN.md`'s "why this cannot be revived" list named three of the
+  four blockers, missing that `Releases/JSearch.html` is not portable; it now
+  matches the English README.
 
 ### Changed
 - `modern/WebServer.java` returned a captured 2001 page for **any** query.
@@ -90,8 +93,8 @@ are archive housekeeping. This repo does not version a live search service.
   non-ASCII of its own.
 - `WebServer` decodes `ENGINES/lycos_en.html` as ISO-8859-1, matching what
   `EncodingGuard` records for it, instead of GBK.
-- Stale test counts in `modern/README.md`, `docs/ARCHITECTURE.md`, and
-  `docs/COMPARISON.md` now say 44.
+- Stale test counts in `modern/README.md`, `docs/ARCHITECTURE.md`,
+  `docs/COMPARISON.md`, and `README.zh-CN.md` now say 44.
 
 ### Added
 - `modern/src/test/java/jsearch/EncodingGuard.java` — same check without needing
