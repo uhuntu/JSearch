@@ -145,6 +145,7 @@ cd modern
 ## 进一步阅读
 
 - **[ANALYSIS.md](docs/ANALYSIS.md)** — 详细设计缺陷分析与并发死锁剖析
+- **[GENERATIONS.md](docs/GENERATIONS.md)** — 四个 `versions/` 快照的逐项实测对比
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** — 原始设计与现代设计的架构对比图解
 - **[modern/README.md](modern/README.md)** — 现代参考实现设计文档与使用指南
 - **[MIGRATION.md](MIGRATION.md)** — 为何这不是生产脚手架

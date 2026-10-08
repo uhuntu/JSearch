@@ -10,6 +10,7 @@ archive, not to run a product.
 | [README.md](README.md) / [README.zh-CN.md](README.zh-CN.md) | What this is, encoding, generations |
 | [PROVENANCE.md](PROVENANCE.md) | Recovery record |
 | [docs/ANALYSIS.md](docs/ANALYSIS.md) | Design defects |
+| [docs/GENERATIONS.md](docs/GENERATIONS.md) | The four snapshots, measured |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Original vs sketch |
 | [modern/README.md](modern/README.md) | How to run the teaching sketch |
 | [runner/README.md](runner/README.md) | How to run the untouched 2002 applet itself |

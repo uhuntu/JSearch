@@ -32,6 +32,17 @@ are archive housekeeping. This repo does not version a live search service.
   prints verbatim, so they do not depend on the Chinese text decoding a
   particular way. `runner/verify-fontconfig.sh` covers the platform decision in
   `run.sh` described below.
+- `docs/GENERATIONS.md`: the four snapshots compared by measurement — line and
+  byte counts, the CR-stripped 72-line diff that is the whole 2000-08 →
+  2001-12 delta (a misspelled override fixed, a wrong parameter name, one
+  statement reorder, otherwise whitespace), the grep counts that locate the
+  2002-01 rewrite (23 `finalize()` declarations → 1, `Thread.stop()` 14 → 0,
+  the PingThread/PingWatch subsystem 47 references → 0, `synchronized` 19 → 0
+  in `JSApplet.java` as the locking moved into `SearchThread.java`), and the
+  nine hunks that are the entire 2002-01 → 2002-03 delta in
+  `SearchThread.java` (two shared static locks, the atomic
+  decrement-and-check, five nested `synchronized` blocks collapsed into one
+  `synchronized (resultLock)`). Every figure has a command that prints it.
 
 ### Fixed
 - The URL-keyed `Hashtable` analysis was wrong about the shipped data. Record

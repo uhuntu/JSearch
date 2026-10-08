@@ -228,6 +228,7 @@ record, including the backup checksum, is in [PROVENANCE.md](PROVENANCE.md).
 ## Further reading
 
 - **[ANALYSIS.md](docs/ANALYSIS.md)** — Detailed design defect analysis and the deadlock patch
+- **[GENERATIONS.md](docs/GENERATIONS.md)** — The four snapshots compared by measurement
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** — Visual comparison of original vs modern design
 - **[modern/README.md](modern/README.md)** — Reference design: how it should have been built
 - **[MIGRATION.md](MIGRATION.md)** — Why this is not a production starter kit
