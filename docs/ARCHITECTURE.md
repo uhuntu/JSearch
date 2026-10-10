@@ -95,6 +95,6 @@ graph TB
 | **Result State** | 4 duplicate stores | Single ResultCollector |
 | **Dedup** | TOCTOU race | Atomic check-then-act under lock |
 | **Scraper** | Inline, mutates statics | Pure function, testable |
-| **Testing** | None | 44 tests, archive fixtures |
+| **Testing** | None | 57 tests, archive fixtures + canned JSON |
 | **Encoding** | GBK implicit | UTF-8 explicit |
 | **Build** | Visual J++ only | JDK 11+, platform-agnostic |

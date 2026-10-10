@@ -41,6 +41,7 @@ public final class WebServer implements AutoCloseable {
     private final int port;
     private final Path archiveRoot;
     private final List<Engine> allEngines;
+    private final List<Engine> liveEngines;
 
     /**
      * The query each captured page in {@code ENGINES/} was saved for.
@@ -63,6 +64,7 @@ public final class WebServer implements AutoCloseable {
     public WebServer(int port) throws IOException {
         this.archiveRoot = findArchiveRoot();
         this.allEngines = initEngines(archiveRoot);
+        this.liveEngines = LiveEngines.engines();
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
         this.port = this.server.getAddress().getPort();
         this.server.setExecutor(Executors.newFixedThreadPool(8));
@@ -232,7 +234,7 @@ public final class WebServer implements AutoCloseable {
         public void handle(HttpExchange exchange) throws IOException {
             Map<String, String> params = parseQueryParams(exchange.getRequestURI());
             String query = params.getOrDefault("q", "java");
-            String mode = params.getOrDefault("mode", "modern"); // "modern" or "legacy"
+            String mode = params.getOrDefault("mode", "modern"); // "modern", "legacy" or "live"
             int levels = clamp(parseInt(params.get("levels"), 1), 1, 3);
             int speed = clamp(parseInt(params.get("concurrency"), 4), 1, 8);
 
@@ -240,10 +242,17 @@ public final class WebServer implements AutoCloseable {
             List<Engine> targetEngines = filterEngines(selectedEnginesParam, mode);
 
             long start = System.currentTimeMillis();
-            SearchResultsData data = executeSearch(targetEngines, query, levels, speed);
-            long durationMs = System.currentTimeMillis() - start;
-
-            String json = formatSearchJson(query, mode, durationMs, targetEngines, data);
+            String json;
+            if ("live".equalsIgnoreCase(mode)) {
+                // The one mode that leaves the machine: real APIs, real network.
+                LiveSearch.Outcome live = LiveSearch.run(query, speed, new HttpPageFetcher());
+                json = formatLiveJson(query, System.currentTimeMillis() - start,
+                        targetEngines, live);
+            } else {
+                SearchResultsData data = executeSearch(targetEngines, query, levels, speed);
+                json = formatSearchJson(query, mode, System.currentTimeMillis() - start,
+                        targetEngines, data);
+            }
             sendResponse(exchange, 200, json, "application/json; charset=UTF-8");
         }
     }
@@ -319,7 +328,9 @@ public final class WebServer implements AutoCloseable {
 
     private List<Engine> filterEngines(String selectedParam, String mode) {
         List<Engine> base;
-        if ("legacy".equalsIgnoreCase(mode)) {
+        if ("live".equalsIgnoreCase(mode)) {
+            base = liveEngines;
+        } else if ("legacy".equalsIgnoreCase(mode)) {
             // Emulate 2002 Hashtable key-by-URL defect:
             // engDataHt.put(engDataHtHead, engDataHtBody);
             Map<String, Engine> urlKeyed = new LinkedHashMap<>();
@@ -530,6 +541,43 @@ public final class WebServer implements AutoCloseable {
 
         // Results
         sb.append("\"results\":").append(resultsToJson(data.collector.results()));
+        sb.append("}");
+        return sb.toString();
+    }
+
+    /**
+     * The live mode's response: the same shape the archive modes return, so the
+     * UI renders it unchanged, plus each engine's report — count, time, and the
+     * note explaining why it returned nothing (dead endpoint, non-JSON body,
+     * or a response the relevance check rejected).
+     */
+    private static String formatLiveJson(String query, long durationMs,
+                                         List<Engine> engines, LiveSearch.Outcome live) {
+        StringBuilder sb = new StringBuilder("{");
+        sb.append("\"query\":").append(quote(query)).append(",");
+        sb.append("\"mode\":").append(quote("live")).append(",");
+        sb.append("\"durationMs\":").append(durationMs).append(",");
+        sb.append("\"totalEngines\":").append(engines.size()).append(",");
+        sb.append("\"totalRaw\":").append(live.rawCount()).append(",");
+        sb.append("\"totalUnique\":").append(live.results().size()).append(",");
+        sb.append("\"duplicatesDropped\":").append(live.duplicatesDropped()).append(",");
+
+        sb.append("\"engines\":[");
+        int eIdx = 0;
+        for (LiveSearch.EngineReport report : live.reports()) {
+            if (eIdx++ > 0) sb.append(",");
+            sb.append("{")
+                    .append("\"name\":").append(quote(report.engine())).append(",")
+                    .append("\"category\":").append(quote("API")).append(",")
+                    .append("\"count\":").append(report.results()).append(",")
+                    .append("\"ms\":").append(report.ms()).append(",")
+                    .append("\"note\":").append(report.note() == null
+                            ? "null" : quote(report.note()))
+                    .append("}");
+        }
+        sb.append("],");
+
+        sb.append("\"results\":").append(resultsToJson(live.results()));
         sb.append("}");
         return sb.toString();
     }
@@ -859,6 +907,11 @@ public final class WebServer implements AutoCloseable {
                 + "      color: black;\n"
                 + "      box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);\n"
                 + "    }\n"
+                + "    .mode-pill.active.live {\n"
+                + "      background: var(--success);\n"
+                + "      color: black;\n"
+                + "      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);\n"
+                + "    }\n"
                 + "    .metrics-bar {\n"
                 + "      display: grid;\n"
                 + "      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));\n"
@@ -1056,6 +1109,10 @@ public final class WebServer implements AutoCloseable {
                 + "            <div class=\"mode-pill active\" id=\"pillModern\" onclick=\"setMode('modern')\">Modern Ref</div>\n"
                 + "            <div class=\"mode-pill\" id=\"pillLegacy\" onclick=\"setMode('legacy')\">1999 Buggy</div>\n"
                 + "            <div class=\"mode-pill\" id=\"pillCompare\" onclick=\"setMode('compare')\">Side-by-Side</div>\n"
+                + "            <div class=\"mode-pill\" id=\"pillLive\" onclick=\"setMode('live')\">Live Web</div>\n"
+                + "          </div>\n"
+                + "          <div style=\"font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;\">\n"
+                + "            <span id=\"modeNote\">Modern Ref replays the archive's fixtures through the fixed design.</span>\n"
                 + "          </div>\n"
                 + "        </div>\n"
                 + "        <div class=\"option-group\">\n"
@@ -1146,11 +1203,19 @@ public final class WebServer implements AutoCloseable {
                 + "    let lastResults = [];\n"
                 + "    let activeFilter = 'all';\n"
                 + "\n"
+                + "    const MODE_NOTES = {\n"
+                + "      modern: 'Modern Ref replays the archive's captured fixtures through the fixed design.',\n"
+                + "      legacy: '1999 Buggy re-enacts the URL-keyed Hashtable: one stray byte from silently dropping an engine.',\n"
+                + "      compare: 'Side-by-Side runs both designs on the same query and shows what the bug cost.',\n"
+                + "      live: 'Live Web queries four no-key APIs for real — Wikipedia, Stack Exchange, Hacker News, and a local SearXNG if one is running (that one also carries Marginalia, whose own API cannot be spelled in the query format the archive uses). Bing stays out on purpose: its 2026 HTML needs a parser the archive never had, and it answers server IPs with popular pages instead of results.'\n"
+                + "    };\n"
                 + "    function setMode(mode) {\n"
                 + "      currentMode = mode;\n"
                 + "      document.getElementById('pillModern').className = 'mode-pill' + (mode === 'modern' ? ' active' : '');\n"
                 + "      document.getElementById('pillLegacy').className = 'mode-pill' + (mode === 'legacy' ? ' active legacy' : '');\n"
                 + "      document.getElementById('pillCompare').className = 'mode-pill' + (mode === 'compare' ? ' active' : '');\n"
+                + "      document.getElementById('pillLive').className = 'mode-pill' + (mode === 'live' ? ' active live' : '');\n"
+                + "      document.getElementById('modeNote').innerText = MODE_NOTES[mode] || '';\n"
                 + "      document.getElementById('legacyAlert').className = 'alert-panel' + (mode === 'legacy' ? ' active' : '');\n"
                 + "      performSearch();\n"
                 + "    }\n"

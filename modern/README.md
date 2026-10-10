@@ -5,9 +5,11 @@ not a revival, not a port, and not a search product.** The original source, in
 all four generations, is untouched one directory up. This directory answers the
 question the archive raises: *how should it have been built?*
 
-Default tests use canned HTML (archive fixtures), so the pipeline runs on any
-JVM with no live engines. `HttpPageFetcher` and `WebServer` exist as illustrations
-of seams the 2002 applet lacked — they are not a service to host.
+Default tests use canned HTML (archive fixtures) and canned JSON, so the suite
+runs on any JVM with no network. `HttpPageFetcher` and `WebServer` exist as
+illustrations of seams the 2002 applet lacked. There is also a fourth mode that
+does leave the machine — `live` — described under
+[Optional: the live mode](#optional-the-live-mode) below.
 
 ## Build and run
 
@@ -76,14 +78,17 @@ a public API.
 ## Tests
 
 ```powershell
-.\build.ps1 -Test    # 44 tests, plain JDK, no JUnit or build tool needed
+.\build.ps1 -Test    # 57 tests, plain JDK, no JUnit or build tool needed
 ```
 
 They cover engine parsing (shared URLs, duplicate identity, truncated/empty/CRLF
 input), URL building, the scraper (document order, markers shorter than four
 characters, markers inside tags, truncated pages terminate), `ResultCollector`
 dedup under 8 threads, and `SearchService` (cross-engine dedup, one failing
-engine not sinking the rest, `cancel(true)` interrupting a blocked fetch).
+engine not sinking the rest, `cancel(true)` interrupting a blocked fetch). The
+live mode's logic — the relevance check, the five JSON shapes, the engine
+dispatch, and a whole search run against a canned fetcher — is covered the same
+way, so nothing in it needs the network to be tested.
 
 Thirteen of them run against **the archive's own files** — the four captured
 pages in `../ENGINES/` and the shipped `../Releases/JSEngines.txt` — read as GBK
@@ -178,15 +183,78 @@ removes the constraint instead of working around it.
 ## Deliberately not built
 
 - No applet UI. `WebServer` only demonstrates engine identity and fixture
-  scraping; it is not a replacement for `JSApplet`.
+  scraping, plus one live mode; it is not a replacement for `JSApplet`.
 - No live HTML scraping of Google or Baidu. Pointing a fetcher at those URLs
-  would only re-create the fragility this archive documents.
+  would only re-create the fragility this archive documents. The live mode's
+  engines are the ones that publish a contract instead of a page.
+
+## Optional: the live mode
+
+The JSON fetcher seams above were built to prove `SearchService` does not care
+whether a page is HTML or JSON. The `live` mode is what that seam turned out to
+be good for: the same `Engine` records, the same `SearchService` fan-out, the
+same `ResultCollector` dedup — pointed at four public APIs that need no key.
+
+| Engine | Endpoint | Shape |
+|---|---|---|
+| Wikipedia | `en.wikipedia.org/w/api.php` | `query.search[]`, url built from the title |
+| Stack Exchange | `api.stackexchange.com/2.3/search/advanced` | `items[]`, `link`/`title`/`body` |
+| Hacker News | `hn.algolia.com/api/v1/search` | `hits[]`, `title` or `story_title`, url from `objectID` |
+| SearXNG | a local instance, `127.0.0.1:8888` by default (`-Djsearch.searxng=`) | `results[]` |
+
+```sh
+java -cp out jsearch.WebServer --port 8080
+# then: http://localhost:8080/ → the "Live Web" pill, or
+curl 'http://localhost:8080/api/search?q=java+applet&mode=live'
+```
+
+The response is the same shape the archive modes return, plus one report per
+engine — how many results, how long, and why it returned nothing. "One engine
+failing is data, not a crash" is only honest if the failure is visible.
+
+Verified against the real APIs for `java applet`: 44 results, 42 after
+deduplication, 1.3 seconds, all four engines answering. Every Wikipedia URL the
+title template builds resolves (200), which is the check that caught the
+encoding bug below.
+
+Three things the live run taught that no fixture could:
+
+**A response that parses can still be about nothing.** Bing, after a few
+requests from a server IP, stops failing and starts serving popular pages that
+have nothing to do with the query. `RelevanceCheck` drops a response in which no
+hit mentions any significant term of the query (tokens longer than two
+characters; an empty hit list or a query of only short words passes, because
+there is nothing to reject). Bing is not in the set for two reasons at once —
+its HTML no longer matches the archive's markers, and it answers server IPs
+this way — but the check is here for whatever is added next.
+
+**An unidentified client gets refused.** The JDK's default `User-Agent` is
+`Java/17`, and Wikipedia answers 403 to it and 200 to a client that says who it
+is. `HttpPageFetcher` now sends `JSearch/1.0 (...)` on every request, and
+`withHeader` replaces it per URL prefix rather than joining it — two
+`User-Agent` lines on one request is a request an API may refuse.
+
+**Marginalia is out, and it is worth saying why.** Its public JSON API takes the
+query as a *path* segment, and the `^` slot encodes a query the way the 2002
+applet did — for a query string, where a space becomes `+`. In a path a `+` is a
+literal plus, so "java applet" reaches Marginalia as a search for the literal
+string "java+applet", which it answers with zero results and no error. Encoding
+the slot for paths instead would change what every archive-mode URL looks like,
+so the engine stays out and is reached through the local SearXNG instance, which
+aggregates it and spells the request correctly. `JsonApiScraper.marginalia()`
+keeps its shape and its test for the day that question is answered.
+
+What the live mode is *not*: it is not a product, and it is not a promise. These
+four endpoints are public today on the same terms they were verified on; the
+archive's own four engines died inside three years. An API contract is the one
+thing about a search engine that does not rot, and it is the only reason a live
+set is possible here at all.
 
 ## Optional: JSON fetcher seams (not a product)
 
 `HttpPageFetcher` and `JsonApiScraper` exist to prove that `SearchService` does
-not care whether a page is HTML or JSON. They are **not** an invitation to turn
-this archive into a live aggregator. `ApiDemo` is a local experiment.
+not care whether a page is HTML or JSON. The live mode above is that seam in
+use; `ApiDemo` remains the one-provider-per-process experiment it started as.
 
 ```sh
 BRAVE_API_KEY=...  java -cp out jsearch.ApiDemo "your query"
@@ -196,15 +264,18 @@ SEARXNG_URL=http://localhost:8080  java -cp out jsearch.ApiDemo "your query"
 Notes:
 - A JSON engine's block markers are unused; give it a placeholder such as
   `{`..`}` (the engine-file format needs six non-blank fields).
-- A `SearchService` takes one `BlockScraper`, so run one service per provider
-  shape (as `ApiDemo` does). Mixing HTML and JSON engines in one service would
-  need a scraper chosen per engine, which is not built.
-- SearXNG pages are 1-based and the level is 0-based, so use one level.
+- A `SearchService` takes one `BlockScraper`, so a service that mixes shapes
+  needs a scraper chosen per engine. `ApiDemo` runs one service per provider
+  shape; the live mode's `LiveEngines.dispatch()` is the other answer — one
+  scraper that routes each engine's response to the parser for its shape.
+- SearXNG pages are 1-based and the level is 0-based, so use one level. The
+  live APIs page by their own limit, so the live mode asks for one level.
 - `cancel(true)` interrupts an in-flight HTTP request; a test proves it against
   a local server.
 - The tests cover the fetcher (against a local `HttpServer`) and the JSON path
-  with fixtures. **Not verified against the live Brave or SearXNG services**:
-  the response shapes come from their documentation, and I had no key.
+  with fixtures. Brave is still **not verified against the live service** — the
+  response shape comes from its documentation, and there was no key. The four
+  live engines are verified; see the live mode above.
 
 ## What the real pages showed
 
@@ -238,4 +309,9 @@ so.
 
 The original cannot run: applets are gone from browsers and from the JDK, and
 every engine it scraped is dead or blocking. Read this as a design contrast,
-not as something to deploy. A live metasearch tool belongs in a different repo.
+not as something to deploy. The `live` mode is the exception that proves the
+rule rather than breaking it — it runs on published contracts, not on scraped
+pages, and it is a demonstration that the design survives contact with a real
+network, not a service. A metasearch tool meant to be used belongs in a
+different repo, and one exists: `../JSearXNG` applies these same lessons
+(the collector, the fan-out, the relevance check) to a live aggregator.

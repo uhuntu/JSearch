@@ -11,6 +11,30 @@ are archive housekeeping. This repo does not version a live search service.
 ## [Unreleased]
 
 ### Added
+- `modern/`: a fourth `WebServer` mode, `live`, that runs the same `Engine`
+  records, `SearchService` fan-out and `ResultCollector` dedup against four
+  public APIs that need no key — Wikipedia, Stack Exchange, Hacker News, and a
+  local SearXNG (`-Djsearch.searxng=`, default `127.0.0.1:8888`). `JsonApiScraper`
+  grew per-field candidate keys (Hacker News spells a text post's title
+  `story_title` and its preview `story_text`) and a `{field}` URL template for
+  the two APIs that carry no URL of their own. Each engine now reports how many
+  results it found, how long it took, and why it returned nothing, so a failing
+  engine is data rather than silence. Verified against the live APIs: 44
+  results, 42 after dedup, 1.3 s for "java applet", all four answering.
+  Marginalia is deliberately not in the set although it publishes a no-key JSON
+  API: it takes the query as a *path* segment, and the `^` slot encodes a query
+  for a query string, where a space becomes `+`. In a path that is a literal
+  plus, so "java applet" reaches it as a search for "java+applet" — zero
+  results, no error, a silent wrong answer. Encoding the slot for paths would
+  change every archive-mode URL, so Marginalia is reached through the local
+  SearXNG instance instead, which aggregates it and spells the request
+  correctly.
+- `modern/src/main/java/jsearch/RelevanceCheck.java` — a response that parses
+  can still be about nothing. Bing, asked from a server IP, stops failing and
+  serves popular pages unrelated to the query; a response in which no hit
+  mentions any significant query term is dropped rather than shown as results.
+  Bing is out of the live set for that and because its HTML no longer matches
+  the archive's markers, but the check is here for whatever is added next.
 - `runner/`: a local runner that plays the part IE + the Java Plug-in used to
   play, so the untouched original `Sources/` applet runs on a modern JDK
   (tested on 17) — a `Frame`, the applet parameters, and an engine table that
@@ -60,6 +84,23 @@ are archive housekeeping. This repo does not version a live search service.
   the original's own error handling on display.
 
 ### Fixed
+- `modern/`'s `HttpPageFetcher` sent no `User-Agent`, so it went out as
+  `Java/17` and Wikipedia answered 403 to every live search. It now identifies
+  itself, and `withHeader` *replaces* a default per URL prefix instead of
+  appending to it — `HttpRequest.Builder.header()` adds a second line rather
+  than overwriting the first, and two `User-Agent` values on one request is a
+  request an API may refuse.
+- `modern/`'s URL template filled its `{field}` placeholders with form
+  encoding, where a space becomes `+`. In a URL path a `+` is a literal plus,
+  so a Wikipedia article titled "Java virtual machine" was linked as
+  `Java+virtual+machine`, which Wikipedia answers with 404. Template values are
+  now percent-encoded. The live run is what caught it: the links looked right
+  and none of them opened.
+- `modern/`'s README said mixing JSON shapes in one `SearchService` "is not
+  built"; the live mode builds exactly that (`LiveEngines.dispatch()` routes
+  each engine's response to the parser for its shape), so the note and the
+  stale test counts (44) in `modern/README.md`, `docs/ARCHITECTURE.md`,
+  `docs/COMPARISON.md` and `README.zh-CN.md` now say 57.
 - The URL-keyed `Hashtable` analysis was wrong about the shipped data. Record
   1 of `Releases/JSEngines.txt` ends in a trailing space, so its key never
   collided with English Google's and nothing was ever dropped: running the

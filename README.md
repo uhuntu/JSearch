@@ -145,7 +145,7 @@ ENGINES/                     hand-written engine notes + saved HTML snapshots
 docs/                        GB8567-88 documentation set, Jan 2002 (8 .doc + txt/ text copies)
 refs/                        GB8567-88 standard archive, 使用说明书, related material
 artifacts/Classes/           compiled .class output (stale, see caveat below)
-modern/                       compiling reference redesign + tests (not the original)
+modern/                       compiling reference redesign + tests, incl. a live mode (not the original)
 runner/                       runs the untouched Sources/ applet on a modern JDK (local shim + demo engine + optional SearXNG bridge)
 versions/                     the other three generations
   2000-08/                   v1.2.3 baseline

@@ -68,7 +68,22 @@ public final class Tests {
         test("JSON escapes and unicode decode", Tests::jsonEscapes);
         test("http fetcher returns body and sends scoped headers", Tests::httpFetcherHeaders);
         test("http fetcher rejects non-2xx", Tests::httpFetcherRejectsError);
+        test("http fetcher identifies itself and lets a prefix override it", Tests::httpFetcherIdentifiesItself);
         test("cancel interrupts a real in-flight HTTP request", Tests::httpFetcherCancel);
+
+        // Live engines: RelevanceCheck, the five API shapes, LiveEngines, LiveSearch
+        test("query tokens keep the words that can mean something", Tests::relevanceTokens);
+        test("a hit mentioning the query anywhere passes", Tests::relevanceAcceptsMention);
+        test("a response about nothing is rejected as a block page", Tests::relevanceRejectsPoison);
+        test("wikipedia JSON builds the article url from the title", Tests::wikipediaJson);
+        test("hacker news JSON falls back to story_title and objectID", Tests::hnJson);
+        test("stack exchange JSON reads link, title, body", Tests::stackexchangeJson);
+        test("marginalia JSON reads url, title, description", Tests::marginaliaJson);
+        test("the live set is five no-key APIs in the archive's format", Tests::liveEnginesAreTheNoKeyApis);
+        test("live dispatch routes each engine to its own parser", Tests::liveDispatchRoutesByEngine);
+        test("live search merges, dedups, and reports every engine", Tests::liveSearchMergesReportsAndDedups);
+        test("live search reports an engine that could not be reached", Tests::liveSearchReportsAFailedEngine);
+        test("web server offers the live mode in its UI", Tests::webServerUiOffersLiveMode);
 
         // WebServer & REST API
         test("web server serves HTML UI and health API", Tests::webServerHealthAndUi);
@@ -549,6 +564,212 @@ public final class Tests {
         check(Boolean.TRUE.equals(m.get("t")) && m.containsKey("z") && m.get("z") == null, "literals");
     }
 
+    // ---- Live engines: RelevanceCheck, the API shapes, LiveEngines, LiveSearch ----
+
+    private static final Engine LIVE = new Engine("Live", "API", "http://live/?q=^",
+            new Engine.Block("{", "}"));
+
+    private static SearchResult hit(String url, String title, String preview) {
+        return new SearchResult(LIVE, url, title, preview);
+    }
+
+    private static void relevanceTokens() {
+        check(RelevanceCheck.tokens("JSearch applet demo").equals(List.of("jsearch", "applet", "demo")),
+                "significant tokens: " + RelevanceCheck.tokens("JSearch applet demo"));
+        check(RelevanceCheck.tokens("go ai to").isEmpty(),
+                "tokens of two characters or fewer are dropped: " + RelevanceCheck.tokens("go ai to"));
+        check(RelevanceCheck.tokens(null).isEmpty(), "a null query has no tokens");
+    }
+
+    private static void relevanceAcceptsMention() {
+        check(RelevanceCheck.relevant("JSearch", List.of(hit("http://a", "JSearch history", ""))),
+                "a title mention");
+        check(RelevanceCheck.relevant("JSearch", List.of(hit("http://a", "Unrelated", "about jsearch"))),
+                "a preview mention");
+        check(RelevanceCheck.relevant("JSearch", List.of(hit("http://jsearch.example/x", "Unrelated", ""))),
+                "a url mention");
+        check(RelevanceCheck.relevant("jsearch", List.of(hit("http://a", "JSEARCH", ""))),
+                "the match is case-insensitive");
+        check(RelevanceCheck.relevant("JSearch", List.of()), "no hits is not a rejection");
+        check(RelevanceCheck.relevant("go ai", List.of(hit("http://a", "Anything", ""))),
+                "a query with no significant token cannot be judged");
+    }
+
+    private static void relevanceRejectsPoison() {
+        List<SearchResult> poison = List.of(
+                hit("http://pop/1", "Popular today", "trending"),
+                hit("http://pop/2", "Top stories", "news of the day"));
+        check(!RelevanceCheck.relevant("jsearch metasearch", poison),
+                "a response about nothing must not be shown as results");
+    }
+
+    private static void wikipediaJson() {
+        String body = "{\"query\":{\"search\":[{\"title\":\"Java (programming language)\","
+                + "\"snippet\":\"<span class=\\\"searchmatch\\\">Java</span> is a language\"}]}}";
+        List<SearchResult> r = JsonApiScraper.wikipedia().scrape(API, body);
+        check(r.size() == 1, "wikipedia hits: " + r.size());
+        check(r.get(0).title().equals("Java (programming language)"), "title: " + r.get(0).title());
+        check(r.get(0).preview().equals("Java is a language"),
+                "snippet tags stripped: " + r.get(0).preview());
+        check(r.get(0).url().equals("https://en.wikipedia.org/wiki/"
+                        + URLEncoding.encode("Java (programming language)").replace("+", "%20")),
+                "url built from the percent-encoded title: " + r.get(0).url());
+        check(JsonApiScraper.wikipedia().scrape(API, "{\"query\":{\"search\":[{\"snippet\":\"no title\"}]}}")
+                        .isEmpty(),
+                "a hit whose template cannot be filled is skipped, not linked to a broken address");
+    }
+
+    private static void hnJson() {
+        String body = "{\"hits\":[{\"objectID\":\"1\",\"title\":\"Show HN: A thing\",\"url\":\"http://a\"},"
+                + "{\"objectID\":\"2\",\"story_title\":\"Ask HN: Java tools\","
+                + "\"story_text\":\"A <p>discussion</p> about java\"}]}";
+        List<SearchResult> r = JsonApiScraper.hn().scrape(API, body);
+        check(r.size() == 2, "hn hits: " + r.size());
+        check(r.get(0).url().equals("http://a"), "a link post keeps its own url");
+        check(r.get(1).title().equals("Ask HN: Java tools"),
+                "story_title stands in for the missing title: " + r.get(1).title());
+        check(r.get(1).preview().equals("A discussion about java"),
+                "story_text with tags stripped: " + r.get(1).preview());
+        check(r.get(1).url().equals("https://news.ycombinator.com/item?id=2"),
+                "a text post's url is built from objectID: " + r.get(1).url());
+    }
+
+    private static void stackexchangeJson() {
+        String body = "{\"items\":[{\"link\":\"http://so/1\",\"title\":\"How to parse\","
+                + "\"body\":\"A <code>regex</code> question\"}]}";
+        List<SearchResult> r = JsonApiScraper.stackexchange().scrape(API, body);
+        check(r.size() == 1 && r.get(0).url().equals("http://so/1"), "link is the url");
+        check(r.get(0).preview().equals("A regex question"),
+                "body with tags stripped: " + r.get(0).preview());
+    }
+
+    private static void marginaliaJson() {
+        String body = "{\"results\":[{\"url\":\"http://m/1\",\"title\":\"Old web\",\"description\":\"D\"}]}";
+        List<SearchResult> r = JsonApiScraper.marginalia().scrape(API, body);
+        check(r.size() == 1 && r.get(0).preview().equals("D") && r.get(0).title().equals("Old web"),
+                "marginalia's result fields");
+    }
+
+    private static void liveEnginesAreTheNoKeyApis() {
+        List<String> names = new ArrayList<>();
+        for (Engine e : LiveEngines.engines()) {
+            names.add(e.name());
+            check(e.category().equals("API"), e.name() + " category: " + e.category());
+            check(e.urlTemplate().contains("^"), e.name() + " must take the query at the ^ slot");
+            check(e.urlTemplate().contains("https://") || e.urlTemplate().contains("127.0.0.1"),
+                    e.name() + " is neither https nor the local instance: " + e.urlTemplate());
+        }
+        check(names.equals(List.of("Wikipedia", "StackExchange", "HackerNews", "SearXNG")),
+                "the live set: " + names);
+    }
+
+    private static void liveDispatchRoutesByEngine() {
+        String wikipediaBody = "{\"query\":{\"search\":[{\"title\":\"Java\",\"snippet\":\"a language\"}]}}";
+        Engine wikipedia = LiveEngines.engines().get(0);
+        List<SearchResult> r = LiveEngines.dispatch().scrape(wikipedia, wikipediaBody);
+        check(r.size() == 1 && r.get(0).engine().name().equals("Wikipedia"),
+                "a wikipedia response goes to the wikipedia parser");
+        Engine stranger = new Engine("Unknown", "API", "http://x/?q=^", new Engine.Block("{", "}"));
+        check(LiveEngines.dispatch().scrape(stranger, wikipediaBody).isEmpty(),
+                "an engine with no parser yields nothing rather than throwing");
+        String searxngBody = "{\"results\":[{\"url\":\"http://s\",\"title\":\"T\",\"content\":\"C\"}]}";
+        List<SearchResult> s = LiveEngines.dispatch().scrape(
+                new Engine("SearXNG", "API", "http://127.0.0.1:8888/search?format=json&q=^",
+                        new Engine.Block("{", "}")), searxngBody);
+        check(s.size() == 1 && s.get(0).preview().equals("C"), "a searxng response goes to the searxng parser");
+    }
+
+    /**
+     * The whole live path with a canned fetcher: merge, dedup, and a report per
+     * engine &mdash; including the engine whose response parses but is about
+     * nothing, which the relevance check drops instead of showing as results.
+     */
+    private static void liveSearchMergesReportsAndDedups() {
+        String shared = "https://en.wikipedia.org/wiki/Java";
+        AtomicInteger fetches = new AtomicInteger();
+        PageFetcher canned = url -> {
+            fetches.incrementAndGet();
+            if (url.contains("wikipedia.org")) {
+                return "{\"query\":{\"search\":[{\"title\":\"Java\",\"snippet\":\"a language\"},"
+                        + "{\"title\":\"Java virtual machine\",\"snippet\":\"runs bytecode\"}]}}";
+            }
+            if (url.contains("api.stackexchange.com")) {
+                // the same Wikipedia link, as an answer citing it
+                return "{\"items\":[{\"link\":\"" + shared + "\",\"title\":\"Java question\","
+                        + "\"body\":\"about java\"}]}";
+            }
+            if (url.contains("hn.algolia.com")) {
+                return "{\"hits\":[{\"objectID\":\"99\",\"story_title\":\"Ask HN: Java tools\","
+                        + "\"story_text\":\"a java discussion\"}]}";
+            }
+            if (url.contains("127.0.0.1") || url.contains("searxng")) {
+                return "{\"results\":[{\"url\":\"http://pop/1\",\"title\":\"Popular today\","
+                        + "\"description\":\"trending\"}]}";
+            }
+            throw new AssertionError("unexpected engine url: " + url);
+        };
+
+        LiveSearch.Outcome outcome = LiveSearch.run("java", 5, canned);
+
+        check(fetches.get() == 4, "one level each: " + fetches.get() + " fetches for four engines");
+        check(outcome.rawCount() == 4, "raw before dedup: " + outcome.rawCount());
+        check(outcome.duplicatesDropped() == 1, "duplicates dropped: " + outcome.duplicatesDropped());
+        List<String> urls = new ArrayList<>();
+        for (SearchResult r : outcome.results()) {
+            urls.add(r.url());
+        }
+        java.util.Collections.sort(urls);
+        check(urls.equals(List.of(shared,
+                        "https://en.wikipedia.org/wiki/Java%20virtual%20machine",
+                        "https://news.ycombinator.com/item?id=99")),
+                "merged unique results: " + urls);
+
+        List<LiveSearch.EngineReport> reports = outcome.reports();
+        check(reports.size() == 4, "every engine reports: " + reports.size());
+        check(reports.get(0).engine().equals("Wikipedia") && reports.get(0).results() == 2,
+                "wikipedia first with both hits");
+        check(reports.get(0).note() == null, "success carries no note");
+        check(reports.get(1).engine().equals("StackExchange") && reports.get(1).results() == 1,
+                "engine order, not completion order");
+        check(reports.get(2).engine().equals("HackerNews") && reports.get(2).results() == 1,
+                "the text post survived");
+        check(reports.get(3).engine().equals("SearXNG") && reports.get(3).results() == 0,
+                "the engine that answered about nothing kept no results");
+        check(reports.get(3).note().contains("relevance check"),
+                "and says why: " + reports.get(3).note());
+    }
+
+    /** The other way an engine returns nothing: it could not be reached at all. */
+    private static void liveSearchReportsAFailedEngine() {
+        PageFetcher canned = url -> {
+            if (url.contains("wikipedia.org")) {
+                return "{\"query\":{\"search\":[{\"title\":\"Java\",\"snippet\":\"a language\"}]}}";
+            }
+            throw new IOException("connection refused");
+        };
+        LiveSearch.Outcome outcome = LiveSearch.run("java", 4, canned);
+        check(outcome.results().size() == 1, "the engines that answered still contribute: "
+                + outcome.results().size());
+        List<LiveSearch.EngineReport> reports = outcome.reports();
+        check(reports.size() == 4, "every engine reports, including the failures: " + reports.size());
+        for (int i = 1; i < reports.size(); i++) {
+            check(reports.get(i).results() == 0, reports.get(i).engine() + " returned nothing");
+            check(reports.get(i).note().contains("IOException"),
+                    reports.get(i).engine() + " says why: " + reports.get(i).note());
+        }
+    }
+
+    private static void webServerUiOffersLiveMode() throws Exception {
+        try (WebServer ws = new WebServer(0)) {
+            ws.start();
+            String ui = new HttpPageFetcher().fetch("http://127.0.0.1:" + ws.getPort() + "/");
+            check(ui.contains("pillLive"), "the live mode pill is missing from the UI");
+            check(ui.contains("setMode('live')"), "the pill does not select the mode");
+            check(ui.contains("Live Web"), "the pill has no label");
+            check(ui.contains("MODE_NOTES"), "the mode note table is missing");
+        }
+    }
+
     private static com.sun.net.httpserver.HttpServer server(
             com.sun.net.httpserver.HttpHandler handler) throws IOException {
         com.sun.net.httpserver.HttpServer s = com.sun.net.httpserver.HttpServer.create(
@@ -580,6 +801,31 @@ public final class Tests {
             HttpPageFetcher other = new HttpPageFetcher().withHeader("http://elsewhere.invalid", "X-Token", "secret");
             other.fetch(base + "/x");
             check(seen.get().startsWith("null|"), "token leaked to unrelated URL: " + seen.get());
+        } finally {
+            s.stop(0);
+        }
+    }
+
+    /**
+     * The JDK's default User-Agent ("Java/17") is refused by some public APIs
+     * &mdash; Wikipedia answers 403 to it and 200 to an identified client &mdash;
+     * so every request must say who is asking, and a per-prefix header must be
+     * able to override that.
+     */
+    private static void httpFetcherIdentifiesItself() throws Exception {
+        AtomicReference<String> seen = new AtomicReference<>();
+        com.sun.net.httpserver.HttpServer s = server(ex -> {
+            seen.set(ex.getRequestHeaders().getFirst("User-Agent"));
+            reply(ex, 200, "{}");
+        });
+        try {
+            String base = "http://127.0.0.1:" + s.getAddress().getPort();
+            new HttpPageFetcher().fetch(base + "/");
+            check(seen.get() != null && seen.get().contains("JSearch"),
+                    "no identifying User-Agent was sent: " + seen.get());
+            new HttpPageFetcher().withHeader(base, "User-Agent", "SomeoneElse/2").fetch(base + "/");
+            check("SomeoneElse/2".equals(seen.get()),
+                    "a registered header must replace the default: " + seen.get());
         } finally {
             s.stop(0);
         }
