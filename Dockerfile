@@ -4,6 +4,11 @@
 
 FROM eclipse-temurin:11-jdk
 
+# Pin a UTF-8 locale so the JVM's sun.jnu.encoding (filename encoding) is UTF-8.
+# The test suite enumerates GBK-named files that throw InvalidPathException
+# under an ASCII (C/POSIX) locale.
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+
 WORKDIR /app
 
 # Copy the entire project

@@ -37,18 +37,18 @@ Write-Host "Compilation successful."
 
 if ($Test) {
     Write-Host "`nRunning tests..."
-    & java "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.Tests
+    & java "-Dsun.jnu.encoding=UTF-8" "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.Tests
     exit $LASTEXITCODE
 }
 
 if ($Benchmark) {
     Write-Host "`nRunning benchmarks..."
-    & java "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.Benchmarks
+    & java "-Dsun.jnu.encoding=UTF-8" "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.Benchmarks
     exit $LASTEXITCODE
 }
 
 if ($Web) {
     Write-Host "`nLaunching Web UI on http://localhost:$Port..."
-    & java "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.WebServer --port $Port
+    & java "-Dsun.jnu.encoding=UTF-8" "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.WebServer --port $Port
     exit $LASTEXITCODE
 }

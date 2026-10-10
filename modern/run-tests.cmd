@@ -9,7 +9,7 @@ if not exist out (
 )
 
 echo Running tests...
-java -Dfile.encoding=UTF-8 -cp out jsearch.Tests
+java -Dsun.jnu.encoding=UTF-8 -Dfile.encoding=UTF-8 -cp out jsearch.Tests
 exit /b %errorlevel%
 
 :error
