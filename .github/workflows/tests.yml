@@ -105,3 +105,16 @@ jobs:
       # depend on the Chinese text decoding a particular way in this log.
       - name: Assert the applet actually ran and searched
         run: sh ./runner/verify.sh runner-ci.log
+
+      # The bridge is the one part of runner/ that talks to something outside
+      # the machine, so it is the part a fixture has to stand in for. These two
+      # modes start StubSearxng.py, put a bridge in front of it and run the
+      # applet against a temporary engine table: no SearXNG, no network, and
+      # the only thing in the repository that exercises the applet's own level
+      # (paging) loop, which a single-page search never reaches. They pick
+      # their own ports, so they cannot collide with each other.
+      - name: Exercise the SearXNG bridge against a fixture
+        run: sh ./runner/verify.sh --live runner-live.log
+
+      - name: Exercise the bridge and the demo engine together
+        run: sh ./runner/verify.sh --combined runner-combined.log

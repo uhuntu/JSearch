@@ -9,7 +9,23 @@
 set -e
 cd "$(dirname "$0")"
 
-if [ ! -f classes/JSearchRunner.class ]; then
+# Compile when a class is missing OR older than the source it comes from.
+# Checking only for a missing file is not enough: a failed edit leaves the
+# previous class in place, and this script would then run code that no longer
+# exists — a verification run passing against a build that never happened.
+# The original applet's classes are compiled from ../Sources, so a re-encode
+# or an edit there is caught the same way.
+needs_compile() {
+    for cls in JSApplet.class SearchThread.class JSearchRunner.class; do
+        [ -f "classes/$cls" ] || return 0
+    done
+    [ JSearchRunner.java -nt classes/JSearchRunner.class ] && return 0
+    [ ../Sources/JSApplet.java -nt classes/JSApplet.class ] && return 0
+    [ ../Sources/SearchThread.java -nt classes/SearchThread.class ] && return 0
+    return 1
+}
+
+if needs_compile; then
     mkdir -p classes
     javac -encoding GBK -d classes ../Sources/JSApplet.java ../Sources/SearchThread.java
     javac -encoding UTF-8 -nowarn -cp classes -d classes JSearchRunner.java

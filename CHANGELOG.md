@@ -82,6 +82,23 @@ are archive housekeeping. This repo does not version a live search service.
   now expect five records and four in the Chinese category. Without the
   bridge the record fails exactly like the historical engines do, which is
   the original's own error handling on display.
+- `runner/StubSearxng.py` and `verify.sh --live` / `--combined`: the bridge
+  chain is verifiable with no SearXNG and no network. The fixture serves
+  SearXNG's JSON shape and is page-aware — three results on page one, two more
+  on page two — a bridge is started in front of it, and the applet runs against
+  a temporary copy of the engine table whose SearXNG record names that bridge,
+  so nothing disturbs a bridge already running for real. `--live` searches the
+  bridge engine alone; `--combined` adds the demo engine, which hands the
+  original two engines with one URL in common and puts its cross-engine dedup
+  on trial. These are the only checks that reach the applet's own level
+  (paging) loop, which a single-page search never touches. Ports are picked
+  free and the temporary files are cleaned up.
+- `run.sh --engine=` / `--levels=`: an unattended run can name the engines to
+  select (comma-separated name prefixes, default `LocalDemo`) and the applet's
+  own `smlCh` level, so a multi-engine, multi-page run is reproducible. The
+  runner prints each result line and each engine's status line — the only way
+  to see the original's fan-out, and the only way to tell which engine a shared
+  URL was credited to.
 
 ### Fixed
 - `modern/`'s `HttpPageFetcher` sent no `User-Agent`, so it went out as
@@ -140,6 +157,31 @@ are archive housekeeping. This repo does not version a live search service.
   written before `runner/` existed, and it never mentioned the Web UI. It now
   documents both paths: `build.sh -w` / `build.ps1 -Web` for the Web UI and
   `run.sh` for the original applet, and lists `runner/` in the structure.
+- `SearxngBridge.py` mistranslated the applet's page number. The 2002 templates
+  carry the level in the tens digit — the shipped records are Google's
+  `start=`0` and Baidu's `pn=`0`, both 0-based result offsets counting by ten —
+  so the applet asks for `page=00, 10, 20` as the level goes 0, 1, 2. The
+  bridge handed that value straight to SearXNG's 1-based `pageno`, so level 1
+  asked for page 11 instead of page 2: no results, and no error. It divides the
+  offset back out now.
+- `SearxngBridge.py` also dropped the last result of every page. After
+  `analyseBlock()` the scraper steps one character and breaks when that fails,
+  on the assumption that a page's real end marker follows its last result, so a
+  block whose `</p>` lands on end-of-stream is never shown. `DemoServer.py`
+  ends its page with `</body></html>` for exactly this reason; the bridge
+  emitted a bare list of blocks. It emits the terminator now.
+- `run.sh` compiled only when `classes/JSearchRunner.class` was missing, so a
+  failed edit left the previous class in place and the script ran code that no
+  longer existed — a verification run passing against a build that never
+  happened. It now recompiles when a source is newer than its class, which
+  also catches an edit or a re-encode under `Sources/`.
+- The runner reported the result count as soon as it held still for two polls.
+  The scraper pauses between blocks and between levels, so that count was
+  mid-scrape: the first two-level bridge run reported 2 results while the level
+  loop was still fetching. It now waits for the applet's own completion signal
+  — `SearchThread` sets `_stop` when the last engine's thread exits, and every
+  `showResult()` has run by then — and reports a finished-but-empty search as a
+  count of 0 rather than as silence.
 
 ### Changed
 - `modern/WebServer.java` returned a captured 2001 page for **any** query.

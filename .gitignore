@@ -19,6 +19,9 @@ modern/target/
 # runner/ build output (tracked sources + engine table live beside it)
 runner/classes/
 
-# runner/ evidence-trail log, written by the CI job and by anyone reproducing
-# it locally with `./run.sh --go > runner-ci.log`
+# runner/ evidence-trail logs, written by the CI job and by anyone reproducing
+# it locally with `./run.sh --go > runner-ci.log`, or by verify.sh --live and
+# verify.sh --combined
 runner-ci.log
+runner-live.log
+runner-combined.log

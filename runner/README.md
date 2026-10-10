@@ -37,7 +37,15 @@ Flags, for unattended verification:
 ```sh
 ./run.sh --go              # auto-type "JSearch" and start a search after 1s
 ./run.sh --go --snap=x.png # additionally save a PNG of the applet after 6s
+./run.sh --go --engine=SearXNG --levels=2
+                           # search the bridge engine, two pages deep
 ```
+
+`--engine=` takes a comma-separated list of engine-name prefixes and selects
+exactly those, deselecting the rest; `--levels=` sets the applet's own `smlCh`
+(search level) choice. Both are things a user can do by hand in the window —
+the flags only make a run reproducible. The default is `LocalDemo`, the one
+engine that answers out of the box.
 
 The `--go` run prints an evidence trail to stdout: how many engines the table
 holds, which engines are listed and selected, when the search starts, how many
@@ -62,11 +70,58 @@ requirements (on Windows, run the script from Git Bash). Without the bridge
 the record simply fails like the historical engines do — selecting it shows
 the original's own error handling, which is authentic behaviour.
 
+Two details of the 2002 dialect decide whether a translated page is read
+correctly, and both are invisible until they go wrong:
+
+- **The level lives in the tens digit.** The shipped templates are Google's
+  `start=`0` and Baidu's `pn=`0` — 0-based result offsets counting by ten — so
+  the applet asks for `page=00, 10, 20` as the level goes 0, 1, 2. SearXNG
+  numbers its pages from one, so the bridge divides the offset back out.
+  Handing it the raw value asks for page 11 when level 1 meant page 2, which
+  returns nothing and says nothing.
+- **A page needs something after its last block.** After `analyseBlock()` the
+  scraper steps one character and breaks when that fails, on the assumption
+  that a page's real end marker follows its last result — so a block whose
+  `</p>` lands on end-of-stream is dropped. `DemoServer.py` ends its page with
+  `</body></html>` for exactly this reason, and the bridge emits the same
+  terminator. Without it the last result of every page is silently lost.
+
+Set the level in the window, or `--levels=2` on the command line, to watch the
+applet's own paging loop run against the bridge.
+
+## Verifying the live path without a network
+
+`verify.sh` can exercise the whole bridge chain — applet, bridge, translated
+page, 2002 scraper — with no SearXNG and no internet, by putting a fixture
+SearXNG (`StubSearxng.py`) behind a bridge and pointing a temporary copy of the
+engine table at it:
+
+```sh
+./verify.sh --live        # the applet searches the fixture SearXNG alone
+./verify.sh --combined    # the same, plus the demo engine, so both engines
+                          # hand the original one URL in common and its
+                          # cross-engine dedup is what is on trial
+```
+
+The fixture is page-aware on purpose: page one carries three results, page two
+two more, so a two-level run has to reach the second page for the count to come
+out right. Ports are picked free and the copy is temporary, so neither mode
+disturbs a bridge already running for real.
+
 ## CI checks that this still works
 
 `first-light.png` is a snapshot of one run on one day. The `runner` job in
-`../.github/workflows/tests.yml` re-establishes it on every push: it runs the
-untouched applet headless under `xvfb`, then runs `verify.sh` over the trail.
+`../.github/workflows/tests.yml` re-establishes it on every push, three ways:
+
+```sh
+./run.sh --go > runner-ci.log   # then:  ./verify.sh runner-ci.log
+./verify.sh --live              # the bridge chain, against a fixture SearXNG
+./verify.sh --combined          # the bridge chain plus the demo engine
+```
+
+Each runs the untouched applet headless under `xvfb` — `--live` and
+`--combined` fall back to `xvfb-run` themselves when there is no `DISPLAY`, and
+say so plainly when neither a display nor `xvfb-run` is available.
 The applet's window never closes, so the run is capped and `timeout`'s exit
 124 is expected — the log is the artefact, and the assertions are the gate.
 
@@ -78,13 +133,23 @@ What the assertions protect, and why each is worth a line:
 - **4 engines listed in the Chinese category, and English Google not among
   them.** The two Google records are in different categories, so the Chinese
   list never held both. This one exists because the prose repeatedly said it
-  did. `SearXNG`, the fifth record, is listed too — its bridge is opt-in, so
-  that assertion covers the record parsing, not the bridge answering.
+  did. `SearXNG`, the fifth record, is listed too.
 - **`LocalDemo` is the selected engine** — the deterministic setup found the
   only engine that can still answer.
 - **2 results from 3 scraped blocks** — the original 4-character sliding-window
   scraper and its dedup, unchanged.
 - **A preview read back** out of the applet's own result table.
+
+The two fixture modes add what a single demo page cannot reach:
+
+- **The applet's own level loop.** Nothing else in the repository makes the
+  original fetch a second page, and the two ways that page can be mistranslated
+  — the tens-digit offset and the missing page terminator — both fail quietly.
+  Each has its own assertion, and reverting either fix makes them fail.
+- **Cross-engine dedup.** `--combined` hands the original two engines with one
+  URL in common: the demo engine contributes two results, the bridge scrapes
+  five and adds four, and the shared URL appears exactly once. The per-engine
+  status lines are what make the arithmetic visible.
 
 All of them match ASCII the runner prints verbatim, so the check never depends
 on the Chinese strings decoding a particular way in the log. The demo server's
@@ -104,13 +169,14 @@ label as a box — the run still passes, it just is not proving much.
 
 | File | Role |
 |---|---|
-| `JSearchRunner.java` | The IE/Plug-in substitute: `AppletStub` + `AppletContext`, the applet parameters (`currUrl`, `_readTxt`, options), a plain `Frame` window |
+| `JSearchRunner.java` | The IE/Plug-in substitute: `AppletStub` + `AppletContext`, the applet parameters (`currUrl`, `_readTxt`, options), a plain `Frame` window. Also the `--engine`/`--levels` flags that make an unattended run deterministic |
 | `JSENGINES.TXT` | The shipped `Releases/JSEngines.txt` converted to UTF-8, with two records appended: `LocalDemo` (the demo server) and `SearXNG` (the bridge) |
 | `DemoServer.py` | A canned results page written to the 2002 scraper's marker format (`<p><` block start, `ref=` URL, `</a>` title, `</p>` block end); third block duplicates the first URL so dedup is visible |
 | `SearxngBridge.py` | Opt-in translator: SearXNG's JSON API in, 2002-dialect result pages out, so the untouched scraper can read the live web. Started by `run-searxng.sh` |
+| `StubSearxng.py` | A fixture SearXNG: the same JSON shape, page-aware, so `verify.sh --live`/`--combined` exercise the bridge with no network |
 | `run-searxng.sh` | Starts the bridge if it is not listening, then launches the applet exactly as `run.sh` does |
 | `fontconfig.properties` | Composite-font mapping passed via `-Dsun.awt.fontconfig`; without it the AWT peers draw boxes for every Chinese string on Windows (see below). Windows only — see the launch-flag note |
-| `verify.sh` | Asserts the `--go` evidence trail. CI runs it against the log of a real run; point it at any log to check one locally |
+| `verify.sh` | Asserts the evidence trail. Three modes: a log to check, `--live`, and `--combined` — the last two run the applet against the fixture themselves |
 | `verify-fontconfig.sh` | Asserts that the font shim is applied on Windows and not elsewhere, using a faked `uname` so both branches are checkable from either platform |
 | `first-light.png` | Output of the first verified run |
 
