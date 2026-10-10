@@ -4,6 +4,14 @@
 
 set -e
 
+# Pin a UTF-8 locale so the JVM derives sun.jnu.encoding (the filename
+# encoding) as UTF-8 regardless of the host locale. The test suite enumerates
+# GBK-named files such as docs/txts/1.*.txt, which throw InvalidPathException
+# when sun.jnu.encoding is ASCII (e.g. a C/POSIX locale). -Dfile.encoding only
+# fixes content decoding, not filenames, so the locale must be set here.
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT_DIR="$SCRIPT_DIR/out"
 SRC_DIR="$SCRIPT_DIR/src"
@@ -77,9 +85,10 @@ if [ ! -d "$OUT_DIR" ]; then
 fi
 
 echo "Compiling..."
-find "$SRC_DIR" -name "*.java" > /tmp/jsearch_sources.txt
-javac -encoding UTF-8 -d "$OUT_DIR" @/tmp/jsearch_sources.txt
-rm /tmp/jsearch_sources.txt
+SOURCES_LIST="$(mktemp)"
+trap 'rm -f "$SOURCES_LIST"' EXIT
+find "$SRC_DIR" -name "*.java" > "$SOURCES_LIST"
+javac -encoding UTF-8 -d "$OUT_DIR" @"$SOURCES_LIST"
 
 echo "Compilation successful."
 

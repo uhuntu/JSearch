@@ -9,6 +9,12 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Pin a UTF-8 locale so the JVM's sun.jnu.encoding (filename encoding) is
+    # UTF-8. ubuntu-latest happens to default to UTF-8, but a POSIX/C locale
+    # would break enumeration of the GBK-named files the suite reads.
+    env:
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
 
     steps:
       - uses: actions/checkout@v4
@@ -30,6 +36,9 @@ jobs:
   # this is the only job that can see it.
   encoding:
     runs-on: ubuntu-latest
+    env:
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
 
     steps:
       - uses: actions/checkout@v4
@@ -56,6 +65,9 @@ jobs:
   # screenshot and a paragraph of prose.
   runner:
     runs-on: ubuntu-latest
+    env:
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
 
     steps:
       - uses: actions/checkout@v4

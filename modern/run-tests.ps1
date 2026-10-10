@@ -7,4 +7,4 @@ $sources = Get-ChildItem -Path (Join-Path $root 'src') -Recurse -Filter '*.java'
            ForEach-Object { $_.FullName }
 javac -encoding UTF-8 -d $out $sources
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-java '-Dfile.encoding=UTF-8' -cp $out jsearch.Tests
+java '-Dsun.jnu.encoding=UTF-8' '-Dfile.encoding=UTF-8' -cp $out jsearch.Tests
