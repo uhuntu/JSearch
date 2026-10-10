@@ -274,9 +274,10 @@ It is not, and the reason is a single invisible byte. Record 1's key is
 `http://www.google.com/ ` **with a trailing space**, so the two Google keys
 are distinct strings and nothing collides. Running the original code against
 the shipped file — see `runner/`, which exists to settle exactly this kind of
-question — loads three engines from three records (four from four once the
-demo engine is appended). The two Google records come back as two separate
-engines, and they land in different categories: the Chinese list holds
+question — loads three engines from three records (five from five once the
+demo engine and the SearXNG record are appended). The two Google records
+come back as two separate engines, and they land in different categories:
+the Chinese list holds
 `GB_Chinese Google` and `Baidu`, English holds plain `Google`. So no single
 category ever shows both, which is a second and independent reason the shipped
 data never displayed the damage.

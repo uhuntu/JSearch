@@ -18,8 +18,10 @@ Visual J++ 6.0 and documented against the Chinese national software
 documentation standard **GB8567-88**.
 
 This repository is an **archive**, not a search product. The original program
-cannot be built or run today (see [Why this cannot be revived](#why-this-cannot-be-revived)).
-It is preserved so the development history is legible. `modern/` is a compiling
+cannot run the way it shipped — in a browser, against the live engines of 2001
+(see [Why this cannot be revived](#why-this-cannot-be-revived));
+[runner/](runner/README.md) runs it locally under a shim instead. It is
+preserved so the development history is legible. `modern/` is a compiling
 design study and a local demo of one 2002 bug — not a metasearch service to
 deploy.
 
@@ -144,7 +146,7 @@ docs/                        GB8567-88 documentation set, Jan 2002 (8 .doc + txt
 refs/                        GB8567-88 standard archive, 使用说明书, related material
 artifacts/Classes/           compiled .class output (stale, see caveat below)
 modern/                       compiling reference redesign + tests (not the original)
-runner/                       runs the untouched Sources/ applet on a modern JDK (local shim + demo engine)
+runner/                       runs the untouched Sources/ applet on a modern JDK (local shim + demo engine + optional SearXNG bridge)
 versions/                     the other three generations
   2000-08/                   v1.2.3 baseline
   2001-12/JSApplet/          last large version
@@ -212,6 +214,14 @@ so even the mangled path has moved around.
 Reviving it would mean rewriting the scraper *and* the UI while keeping none of
 the original scraping logic, and having to re-derive block markers from scratch
 against today's anti-bot measures.
+
+One partial exception, and it is a new environment rather than a revival:
+`runner/` runs the original bytes locally under a shim, and its optional
+SearXNG bridge adds an engine whose pages a small translator rewrites into the
+2002 dialect — so the untouched scraper does read live results, with the
+anti-bot fighting done on the far side of the bridge. The shipped
+configuration itself remains exactly as blocked as the four points above
+describe.
 
 ---
 

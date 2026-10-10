@@ -61,24 +61,29 @@ echo
 # The applet booted and built its UI, rather than dying in init().
 expect "[runner] engines in table" "the applet started and built the engine table"
 
-# The claim docs/ANALYSIS.md makes about the URL-keyed Hashtable: all four
-# records load as four engines. Record 1's key carries a trailing space, so the
+# The claim docs/ANALYSIS.md makes about the URL-keyed Hashtable: all five
+# records load as five engines. Record 1's key carries a trailing space, so the
 # two Google keys stayed distinct and nothing was dropped. If someone trims
 # that space, this is the assertion that notices.
-expect "[runner] engines in table = 4" "all 4 engine records loaded (no URL-key collision)"
+expect "[runner] engines in table = 5" "all 5 engine records loaded (no URL-key collision)"
 
-# The engine file defines 4 records in 2 categories: GB_Chinese Google and
-# Baidu and LocalDemo are Chinese, plain Google is English. Selecting the
-# Chinese category therefore lists 3 of the 4 — and in particular NOT English
+# The engine file defines 5 records in 2 categories: GB_Chinese Google, Baidu,
+# LocalDemo and SearXNG are Chinese, plain Google is English. Selecting the
+# Chinese category therefore lists 4 of the 5 — and in particular NOT English
 # Google. This is the fact the prose kept getting wrong ("the Chinese category
 # lists both Google entries" — it never did; the two Googles sit in different
 # categories, which is a second, independent reason no collision was visible).
-count_is '^\[runner\] engine\[[0-9]\+\] = ' 3 "the Chinese category lists 3 of the 4 engines"
-refute "[runner] engine[3] = " "English Google is absent from the Chinese category"
+count_is '^\[runner\] engine\[[0-9]\+\] = ' 4 "the Chinese category lists 4 of the 5 engines"
+refute "= Google / Google" "English Google is absent from the Chinese category"
+
+# The fifth record is the SearXNG one. The bridge behind it is opt-in and CI
+# does not run it, so this asserts the record parses and lands in the Chinese
+# category — not that the bridge answers.
+expect "= SearXNG / live web aggregation" "the SearXNG record loads as a Chinese engine"
 
 # The runner's deterministic setup found and selected the only engine that can
-# still answer: the local demo server.
-expect "[runner] engine[0] = LocalDemo" "LocalDemo is in the Chinese list"
+# still answer out of the box: the local demo server.
+expect "= LocalDemo" "LocalDemo is in the Chinese list"
 expect "  [selected]" "exactly the demo engine was selected for the search"
 
 expect "[runner] search started for 'JSearch'" "the applet started the search itself"

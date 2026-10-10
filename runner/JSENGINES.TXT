@@ -26,3 +26,9 @@ http://localhost:8901/search?q=^&page=`0
 <p><
 </p>
 
+http://127.0.0.1:8902/
+SearXNG / live web aggregation
+Chinese
+http://127.0.0.1:8902/search?q=^&page=`0
+<p><
+</p>

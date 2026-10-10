@@ -43,6 +43,25 @@ The `--go` run prints an evidence trail to stdout: how many engines the table
 holds, which engines are listed and selected, when the search starts, how many
 results land, and the preview text.
 
+## Searching the live web (optional)
+
+The fifth engine record, `SearXNG / live web aggregation`, points at
+`SearxngBridge.py` on `127.0.0.1:8902` — a small translator that asks a local
+SearXNG (JSON API on `http://127.0.0.1:8888`) for results and re-emits them
+in the 2002 dialect the scraper reads. Start the bridge and the applet
+together with:
+
+```sh
+./run-searxng.sh        # starts the bridge if needed, then the applet as usual
+```
+
+Select `SearXNG / live web aggregation` in the engine list and search: the
+original sliding-window scraper then parses live web results, unchanged.
+`python3` and a local SearXNG with its JSON API enabled are the only
+requirements (on Windows, run the script from Git Bash). Without the bridge
+the record simply fails like the historical engines do — selecting it shows
+the original's own error handling, which is authentic behaviour.
+
 ## CI checks that this still works
 
 `first-light.png` is a snapshot of one run on one day. The `runner` job in
@@ -53,12 +72,14 @@ The applet's window never closes, so the run is capped and `timeout`'s exit
 
 What the assertions protect, and why each is worth a line:
 
-- **4 of 4 engine records load.** The URL-key collision this archive's analysis
+- **5 of 5 engine records load.** The URL-key collision this archive's analysis
   used to report never actually happened, because record 1's key carries a
   trailing space. Trim it and this is the assertion that fails.
-- **3 engines listed in the Chinese category, and no `engine[3]`.** The two
-  Google records are in different categories, so the Chinese list never held
-  both. This one exists because the prose repeatedly said it did.
+- **4 engines listed in the Chinese category, and English Google not among
+  them.** The two Google records are in different categories, so the Chinese
+  list never held both. This one exists because the prose repeatedly said it
+  did. `SearXNG`, the fifth record, is listed too — its bridge is opt-in, so
+  that assertion covers the record parsing, not the bridge answering.
 - **`LocalDemo` is the selected engine** — the deterministic setup found the
   only engine that can still answer.
 - **2 results from 3 scraped blocks** — the original 4-character sliding-window
@@ -73,7 +94,7 @@ to start the server.
 
 ```sh
 ./run.sh --go > run.log 2>&1     # or: .\run.ps1 --go > run.log 2>&1
-./verify.sh run.log              # 11 checks, exit 0 or 1
+./verify.sh run.log              # 12 checks, exit 0 or 1
 ```
 
 On Linux, install a CJK font first (`fonts-noto-cjk`) or AWT will draw every
@@ -84,8 +105,10 @@ label as a box — the run still passes, it just is not proving much.
 | File | Role |
 |---|---|
 | `JSearchRunner.java` | The IE/Plug-in substitute: `AppletStub` + `AppletContext`, the applet parameters (`currUrl`, `_readTxt`, options), a plain `Frame` window |
+| `JSENGINES.TXT` | The shipped `Releases/JSEngines.txt` converted to UTF-8, with two records appended: `LocalDemo` (the demo server) and `SearXNG` (the bridge) |
 | `DemoServer.py` | A canned results page written to the 2002 scraper's marker format (`<p><` block start, `ref=` URL, `</a>` title, `</p>` block end); third block duplicates the first URL so dedup is visible |
-| `JSENGINES.TXT` | The shipped `Releases/JSEngines.txt` converted to UTF-8, with a 4th record appended: `LocalDemo`, pointing at the demo server |
+| `SearxngBridge.py` | Opt-in translator: SearXNG's JSON API in, 2002-dialect result pages out, so the untouched scraper can read the live web. Started by `run-searxng.sh` |
+| `run-searxng.sh` | Starts the bridge if it is not listening, then launches the applet exactly as `run.sh` does |
 | `fontconfig.properties` | Composite-font mapping passed via `-Dsun.awt.fontconfig`; without it the AWT peers draw boxes for every Chinese string on Windows (see below). Windows only — see the launch-flag note |
 | `verify.sh` | Asserts the `--go` evidence trail. CI runs it against the log of a real run; point it at any log to check one locally |
 | `verify-fontconfig.sh` | Asserts that the font shim is applied on Windows and not elsewhere, using a faked `uname` so both branches are checkable from either platform |
@@ -107,12 +130,13 @@ the environment, not changes to the applet:
 
   ```sh
   iconv -f GBK -t UTF-8 ../Releases/JSEngines.txt > JSENGINES.TXT
-  printf '\nhttp://127.0.0.1:8901/\nLocalDemo / demo\nChinese\nhttp://127.0.0.1:8901/search?q=^&page=`0\n<p><\n</p>\n\n' >> JSENGINES.TXT
+  printf '\nhttp://localhost:8901/\nLocalDemo / 本地演示引擎\nChinese\nhttp://localhost:8901/search?q=^&page=`0\n<p><\n</p>\n\n' >> JSENGINES.TXT
+  printf 'http://127.0.0.1:8902/\nSearXNG / live web aggregation\nChinese\nhttp://127.0.0.1:8902/search?q=^&page=`0\n<p><\n</p>\n' >> JSENGINES.TXT
   ```
 
-  Note the leading blank line in the appended record: the parser reads six
-  lines plus a separator per record, and the shipped file does not end with
-  one.
+  Note the leading blank line in the first appended record: the parser reads
+  six lines plus a separator per record, and the shipped file does not end
+  with one. The second append needs none — the first ends with a separator.
 
 - **Windows launch flags (in `run.sh`, mirrored by `run.ps1`)** — two, both
   tested on JDK 11 on a
@@ -138,10 +162,11 @@ the environment, not changes to the applet:
 **The shipped data never actually lost an engine.** `docs/ANALYSIS.md`
 originally reported that the URL-keyed `Hashtable` in `getEngData()` silently
 collapsed Chinese Google into English Google — three records in, two engines
-out. Running the code proves otherwise: all four records load as four engines.
-They also come back as three in the Chinese category, because the two Google
-records are in different categories — `GB_Chinese Google` is Chinese, plain
-`Google` is English — so the Chinese list never held both in the first place.
+out. Running the code proves otherwise: all five records load as five engines.
+They also come back as four in the Chinese category (`GB_Chinese Google`,
+`Baidu`, `LocalDemo`, `SearXNG`), because the two Google records are in
+different categories — `GB_Chinese Google` is Chinese, plain `Google` is
+English — so the Chinese list never held both in the first place.
 The reason the keys stayed distinct is a
 single invisible byte: record 1's URL key is `http://www.google.com/ ` *with
 a trailing space*, so the two keys never collided. The design defect is real
@@ -154,7 +179,9 @@ Analysis corrected accordingly; see `../docs/ANALYSIS.md`.
 The applet UI, threading, scraping and dedup are the original 2002 code, and
 they work. What is dead is the world around them: the three historical
 engines (2001-era Google/Baidu/Lycos URLs) no longer return pages this
-scraper can read, so only `LocalDemo` produces results — selecting the others
-shows the original's error handling in the `>>消息` pane, which is itself
-authentic behaviour. Double-clicking a result hands the URL to `xdg-open`
-(the browser-path option the applet already had).
+scraper can read, so out of the box only `LocalDemo` produces results —
+selecting the others shows the original's error handling in the `>>消息`
+pane, which is itself authentic behaviour. The one live path is opt-in:
+`./run-searxng.sh` starts `SearxngBridge.py`, and the `SearXNG` record then
+answers from the live web through it. Double-clicking a result hands the URL
+to `xdg-open` (the browser-path option the applet already had).

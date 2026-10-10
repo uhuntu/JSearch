@@ -24,9 +24,11 @@ import java.util.Enumeration;
  * Everything the applet itself does is untouched original code from Sources/.
  *
  * The engine table here is the shipped Releases/JSEngines.txt converted to
- * UTF-8 (the code reads with the platform charset) with a fourth record
- * appended: LocalDemo, an engine served by DemoServer.py on 127.0.0.1:8901,
- * so a live search is possible at all. See README.md.
+ * UTF-8 (the code reads with the platform charset) with two records appended:
+ * LocalDemo, served by DemoServer.py on 127.0.0.1:8901 so a live search is
+ * possible at all, and SearXNG, served by SearxngBridge.py on 127.0.0.1:8902
+ * (start it with ./run-searxng.sh) so the applet can search the live web.
+ * See README.md.
  *
  * Usage: java -cp classes JSearchRunner [file:/...runner/] [--go] [--snap=FILE]
  *   --go         auto-run one search for "JSearch" a moment after startup
@@ -124,7 +126,7 @@ public class JSearchRunner {
                 applet.containingTf.requestFocus();
 
                 System.out.println("[runner] engines in table = " + applet.engDataTable.size()
-                        + " (the file defines 4 and all 4 load: record 1's URL key has a"
+                        + " (the file defines 5 and all 5 load: record 1's URL key has a"
                         + " trailing space, which accidentally keeps the URL-keyed table from colliding)");
                 for (int i = 0; i < applet.searchEnginesLi.getItemCount(); i++) {
                     System.out.println("[runner] engine[" + i + "] = " + applet.searchEnginesLi.getItem(i)

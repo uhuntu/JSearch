@@ -14,24 +14,28 @@ are archive housekeeping. This repo does not version a live search service.
 - `runner/`: a local runner that plays the part IE + the Java Plug-in used to
   play, so the untouched original `Sources/` applet runs on a modern JDK
   (tested on 17) — a `Frame`, the applet parameters, and an engine table that
-  is the shipped `Releases/JSEngines.txt` converted to UTF-8 with a fourth,
-  `LocalDemo` record served canned 2002-marker pages by `DemoServer.py`.
-  `--go` / `--snap=FILE` support unattended verification; `first-light.png`
-  is the first run's actual output (two results, dedup applied, preview
-  rendered). This is the only path in the repo that executes the original
-  artifact itself; `modern/` remains the redesign, not the original.
+  is the shipped `Releases/JSEngines.txt` converted to UTF-8 with two records
+  appended: `LocalDemo`, served canned 2002-marker pages by `DemoServer.py`,
+  and `SearXNG`, served by `SearxngBridge.py` (opt-in via `run-searxng.sh`),
+  which translates a local SearXNG's JSON API into the 2002 dialect so the
+  untouched scraper reads live web results. `--go` / `--snap=FILE` support
+  unattended verification; `first-light.png` is the first run's actual output
+  (two results, dedup applied, preview rendered). This is the only path in
+  the repo that executes the original artifact itself; `modern/` remains the
+  redesign, not the original.
 - A `runner` CI job, so that claim is checked on every push instead of resting
   on one screenshot. It runs the untouched applet headless under `xvfb` with
-  `run.sh --go`, then asserts the evidence trail the runner prints: 4 of 4
+  `run.sh --go`, then asserts the evidence trail the runner prints: 5 of 5
   engine records loaded (the URL-key collision that the old analysis reported
-  never actually happened), 3 of 4 listed in the Chinese category with English
-  Google absent, the demo engine selected, 2 results out of 3 scraped blocks
-  (the original dedup working), and a preview read back out of the applet's own
-  result table. `runner/verify.sh` holds the assertions and can be pointed at
-  any log, so the same check runs locally; all of them are on ASCII the runner
-  prints verbatim, so they do not depend on the Chinese text decoding a
-  particular way. `runner/verify-fontconfig.sh` covers the platform decision in
-  `run.sh` described below.
+  never actually happened), 4 of 5 listed in the Chinese category with English
+  Google absent and the `SearXNG` record present, the demo engine selected,
+  2 results out of 3 scraped blocks (the original dedup working), and a
+  preview read back out of the applet's own result table.
+  `runner/verify.sh` holds the assertions and can be pointed at any log, so
+  the same check runs locally; all of them are on ASCII the runner prints
+  verbatim, so they do not depend on the Chinese text decoding a particular
+  way. `runner/verify-fontconfig.sh` covers the platform decision in `run.sh`
+  described below.
 - `docs/GENERATIONS.md`: the four snapshots compared by measurement — line and
   byte counts, the CR-stripped 72-line diff that is the whole 2000-08 →
   2001-12 delta (a misspelled override fixed, a wrong parameter name, one
@@ -43,6 +47,17 @@ are archive housekeeping. This repo does not version a live search service.
   `SearchThread.java` (two shared static locks, the atomic
   decrement-and-check, five nested `synchronized` blocks collapsed into one
   `synchronized (resultLock)`). Every figure has a command that prints it.
+- `runner/SearxngBridge.py` + `runner/run-searxng.sh`: an opt-in engine that
+  answers from the live web, without touching the original code. The bridge
+  asks a local SearXNG's JSON API and re-emits the results in the 2002 marker
+  dialect (`<p><a ref=URL>TITLE</a><br>PREVIEW</p>`), so the untouched
+  4-character sliding-window scraper parses them unchanged;
+  `run-searxng.sh` starts it and launches the applet. The fifth engine record
+  (`SearXNG / live web aggregation`, Chinese) ships in `JSENGINES.TXT`, and
+  `verify.sh`, the runner docs and the READMEs' "cannot be revived" sections
+  now expect five records and four in the Chinese category. Without the
+  bridge the record fails exactly like the historical engines do, which is
+  the original's own error handling on display.
 
 ### Fixed
 - The URL-keyed `Hashtable` analysis was wrong about the shipped data. Record
@@ -57,8 +72,9 @@ are archive housekeeping. This repo does not version a live search service.
   both Google entries"; it never did. `GB_Chinese Google` is Chinese and plain
   `Google` is English, so the two records land in different categories — which
   the table ten lines above the claim in `docs/ANALYSIS.md` already showed.
-  Selecting Chinese lists 2 of the 3 shipped engines (3 of 4 once `LocalDemo`
-  is appended), verified against the applet's own output. `FAQ.md` still
+  Selecting Chinese lists 2 of the 3 shipped engines (4 of 5 once `LocalDemo`
+  and the `SearXNG` record are appended), verified against the applet's own
+  output. `FAQ.md` still
   carried the original, disproven "silently dropped due to URL key collision",
   even though the entry above lists the files that had been corrected.
 - `runner/run.sh` passed `-Dsun.awt.fontconfig=fontconfig.properties` on every

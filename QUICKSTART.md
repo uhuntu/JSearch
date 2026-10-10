@@ -96,10 +96,12 @@ cd runner
 ```
 
 Type a query and press 开始搜索. The demo server on `127.0.0.1:8901` starts
-automatically; only the `LocalDemo` engine can still answer — selecting the
-historical engines shows the original's own error handling, which is authentic
-behaviour. Unattended: `./run.sh --go --snap=/tmp/snap.png`. See
-[runner/README.md](runner/README.md).
+automatically; out of the box only the `LocalDemo` engine can answer —
+selecting the historical engines shows the original's own error handling,
+which is authentic behaviour. For one live engine, `./run-searxng.sh` starts
+a bridge that feeds a local SearXNG's results to the applet in the 2002
+dialect (see [runner/README.md](runner/README.md)). Unattended:
+`./run.sh --go --snap=/tmp/snap.png`. See [runner/README.md](runner/README.md).
 
 ### Run tests only
 
