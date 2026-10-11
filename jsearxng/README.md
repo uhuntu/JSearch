@@ -1,19 +1,28 @@
 # JSearXNG
 
 A real metasearcher, **in Java** — the J is earned, not inherited. The name is
-the architecture: **JSearch**, the 2002 Java applet archived in the
-neighbouring [JSearch](https://github.com/uhuntu/JSearch) repository, supplies
-the skeleton — fan-out, scrape, deduplicate, show every engine's failure
-honestly — and **SearXNG**, the local instance, supplies a
-community-maintained engine pool behind one JSON call. Same idea the 2002
-author had, in a world that fights back, and the 2002 applet UI is reborn as
-the face.
+the architecture: **JSearch**, the 2002 Java applet archived in
+[`../Sources/`](../Sources/), supplies the skeleton — fan-out, scrape,
+deduplicate, show every engine's failure honestly — and **SearXNG**, the local
+instance, supplies a community-maintained engine pool behind one JSON call.
+Same idea the 2002 author had, in a world that fights back, and the 2002 applet
+UI is reborn as the face.
+
+It is the fourth piece of this repository's lineage, and the only one that
+touches the network: [`../Sources/`](../Sources/) and
+[`../versions/`](../versions/) hold the artifact,
+[`../modern/`](../modern/) is the design contrast,
+[`../runner/`](../runner/) proves the original still runs, and this is what the
+design became when it was pointed at engines that fight back. Its 14 commits
+were merged in from the standalone
+[`uhuntu/JSearXNG`](https://github.com/uhuntu/JSearXNG) repository, which now
+serves only as a pointer back here.
 
 The app is one file (`JSearXNG.java`), JDK standard library only —
 `java.net.http`, `com.sun.net.httpserver`, `java.util.concurrent` — no build
-step: the source is executed directly. The JSON reader inside is copied from
-the teaching sketch (`JSearch/modern/`), which is the lineage helping its own
-descendant.
+step: the source is executed directly. The JSON reader inside is copied from the
+teaching sketch ([`../modern/`](../modern/)), which is the lineage helping its
+own descendant.
 
 ```sh
 java JSearXNG.java         # http://127.0.0.1:8092/
@@ -110,5 +119,6 @@ construction.
 
 ## License
 
-GPL-2.0-or-later — the same terms as the archive it descends from; the
-embedded JSON reader comes from `modern/` under those terms.
+GPL-2.0-or-later, under the repository's root [LICENSE](../LICENSE) — the same
+terms as the archive it descends from, and required by them: the embedded JSON
+reader comes from [`../modern/`](../modern/) under those terms.

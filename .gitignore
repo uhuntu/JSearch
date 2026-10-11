@@ -25,3 +25,6 @@ runner/classes/
 runner-ci.log
 runner-live.log
 runner-combined.log
+
+# jsearxng/ build output (the suite compiles into out/, like modern/)
+jsearxng/out/

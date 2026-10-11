@@ -112,6 +112,29 @@ are archive housekeeping. This repo does not version a live search service.
   split is deliberate, and this only makes the lineage legible in both
   directions.
 
+- Merged the living descendant into this repository. `jsearxng/` — a real
+  metasearcher in Java, one file, JDK standard library only, with the 2002
+  applet UI reborn as its face — came in from the standalone
+  [`uhuntu/JSearXNG`](https://github.com/uhuntu/JSearXNG) repository by
+  subtree merge, so all 14 of its commits are ancestors here and the bugs
+  they fixed stay attributed: the repeated-form-key collapse, the `&amp;`
+  that survived inside Bing tracking URLs, the raw `&#0183;` in a preview,
+  and the HTTP 451 that ended the session which built it. The duplicate
+  `LICENSE` was dropped — the root one is byte-identical — and its 117
+  pure-function checks gained a CI job, which is safe because they need no
+  network, no fixtures and no clock.
+- The charter now says what the repository is, because it changed.
+  `ROADMAP.md`, `CONTRIBUTING.md`, `MIGRATION.md`, `OVERVIEW.md`, both
+  READMEs, `INDEX.md` and `modern/README.md` all described an archive that is
+  "not a search product" and told readers who wanted a live tool to start a
+  different repository. That repository is now this one, so those statements
+  are scoped: the *archive* is not a search product and `modern/` does not
+  become one — `jsearxng/` is where that work lives, and it is the only
+  directory whose subject is the present rather than the past.
+  `CONTRIBUTING.md` gains a section saying so, with the different bar that
+  follows: `jsearxng/` changes when an upstream changes, and its commits are
+  expected to name what broke.
+
 ### Fixed
 - `modern/`'s `HttpPageFetcher` sent no `User-Agent`, so it went out as
   `Java/17` and Wikipedia answered 403 to every live search. It now identifies

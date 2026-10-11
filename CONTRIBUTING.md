@@ -1,8 +1,10 @@
 # Contributing to JSearch Archive
 
-This is a **software archive**, not an active product. The original code cannot
-run (applets are gone from browsers and JDK), and every engine it scraped is
-dead or blocking. `modern/` is a teaching sketch, not a metasearch service.
+This is a **software archive** with one living descendant. The original code
+cannot run (applets are gone from browsers and JDK), and every engine it
+scraped is dead or blocking; `modern/` is a teaching sketch, and `runner/`
+proves the untouched artifact still runs. `jsearxng/` is the part that is a
+real, working tool — the same design pointed at engines that fight back.
 
 ## What contributions are welcome
 
@@ -28,7 +30,19 @@ dead or blocking. `modern/` is a teaching sketch, not a metasearch service.
 - Re-implementing the applet
 - Trying to make the original code run
 - New live search engines, caching, rate limits, or a deployable aggregator
+  **in `modern/`** — that work belongs in `jsearxng/`, which already does it
 - Expanding `WebServer` into a hosted API
+
+### The living descendant (`jsearxng/`)
+- New engines, parser fixes, relevance checks
+- Tests that pin the entity layer, query parsing, dedup keys and rendering —
+  the suite is pure functions, so it runs in CI with no network
+- Anything the live web breaks, which is most of what it needs
+
+`jsearxng/` is the one directory whose subject is the present rather than the
+past, so its bar is different: it changes when an upstream changes, and its
+commits are expected to name what broke. The archive directories do not move
+for it.
 
 ### Code style changes to original sources
 The `Sources/` and `versions/` directories are **frozen artifacts**. Do not

@@ -18,13 +18,13 @@ archive, not to run a product.
 | [ROADMAP.md](ROADMAP.md) | In scope vs out of scope |
 | [MIGRATION.md](MIGRATION.md) | Why this is not a starter kit |
 
-## Not in this repository
+## The living descendant
 
-[**JSearXNG**](https://github.com/uhuntu/JSearXNG) — the living descendant of
-this skeleton, in its own repository. This archive keeps the 2002 artifact, the
-design contrast in `modern/`, and the proof in `runner/` that the original still
-runs; JSearXNG is what the design became when it was pointed at engines that
-fight back. See "The descendant" in [README.md](README.md).
+[**jsearxng/**](jsearxng/) — the same design, in Java, running against engines
+that fight back. This archive keeps the 2002 artifact, the design contrast in
+`modern/`, and the proof in `runner/` that the original still runs; `jsearxng/`
+is what the design became. It is the only directory here whose subject is the
+present rather than the past.
 
 ## Also here
 

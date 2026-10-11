@@ -1,8 +1,11 @@
 # Roadmap
 
-This repository is an **archive** with a small teaching sketch in `modern/`.
-It is not a search product. There is no plan to add DuckDuckGo, Bing, caching,
-rate limiting, or a deployable aggregator.
+This repository is an **archive** with a small teaching sketch in `modern/`, a
+runner in `runner/` that proves the untouched original still works, and one
+living descendant in `jsearxng/`. The archive itself is not a search product,
+and there is no plan to turn `modern/` into one — no DuckDuckGo, Bing, caching,
+rate limiting or deployable aggregator there. That work already exists, in
+`jsearxng/`, and it is maintained as the live web changes.
 
 ## In scope
 
@@ -20,15 +23,16 @@ rate limiting, or a deployable aggregator.
 
 - Reviving the applet
 - Porting the UI
-- Building a metasearch service
-- “Production adaptation” of `modern/`
+- Building a metasearch service **out of `modern/`** — done, in `jsearxng/`
+- “Production adaptation” of `modern/` — same: `jsearxng/` is that, and
+  `modern/` keeps its value by stopping where it does
 - Community-growth kits that do not help someone read the 2002 source
 
-The last two are not refusals so much as a division of labour: a tool meant to
+The first two are not refusals so much as a division of labour: a tool meant to
 be used has to live with anti-bot measures, upstream drift and timeouts, and
-none of that is archive work. That tool exists —
-[JSearXNG](https://github.com/uhuntu/JSearXNG), described under "The descendant"
-in the README.
+none of that is archive work. That tool is in this repository —
+[`jsearxng/`](jsearxng/), whose 14 commits were merged in from the standalone
+[`uhuntu/JSearXNG`](https://github.com/uhuntu/JSearXNG) repository.
 
 ## Maybe, if they serve the archive
 

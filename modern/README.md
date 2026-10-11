@@ -312,7 +312,8 @@ every engine it scraped is dead or blocking. Read this as a design contrast,
 not as something to deploy. The `live` mode is the exception that proves the
 rule rather than breaking it — it runs on published contracts, not on scraped
 pages, and it is a demonstration that the design survives contact with a real
-network, not a service. A metasearch tool meant to be used belongs in a
-different repo, and one exists: [JSearXNG](https://github.com/uhuntu/JSearXNG)
-applies these same lessons (the collector, the fan-out, the relevance check) to
-a live aggregator.
+network, not a service. A metasearch tool meant to be used belongs in
+[`jsearxng/`](../jsearxng/), and it is here: it applies these same lessons (the
+collector, the fan-out, the relevance check) to a live aggregator, in Java, with
+the 2002 applet UI as its face. `modern/` keeps its value by stopping where it
+does — the contrast is the point, and the descendant is a different job.

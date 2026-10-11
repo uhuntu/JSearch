@@ -3,9 +3,12 @@
 JSearch is a **software archive** of a 1999–2002 Java applet that fanned a query
 out to several search engines and de-duplicated the scraped results.
 
-It is not a search product. The original cannot run. `modern/` is a compiling
-sketch of how that design should have been structured, plus tests against the
-2001 HTML captures. It is not a revival.
+It is not a search product, and the archive itself never becomes one. The
+original cannot run. `modern/` is a compiling sketch of how that design should
+have been structured, plus tests against the 2001 HTML captures — a design
+contrast, not a revival. `runner/` proves the untouched original still runs.
+[`jsearxng/`](jsearxng/) is the one living part: the same design, in Java,
+running against engines that fight back.
 
 **Status:** Archive  
 **License:** GPL-2.0  

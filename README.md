@@ -17,13 +17,15 @@ de-duplicated result list with title, URL and preview. Built with Microsoft
 Visual J++ 6.0 and documented against the Chinese national software
 documentation standard **GB8567-88**.
 
-This repository is an **archive**, not a search product. The original program
-cannot run the way it shipped — in a browser, against the live engines of 2001
-(see [Why this cannot be revived](#why-this-cannot-be-revived));
+This repository is an **archive** with one living descendant. The original
+program cannot run the way it shipped — in a browser, against the live engines
+of 2001 (see [Why this cannot be revived](#why-this-cannot-be-revived));
 [runner/](runner/README.md) runs it locally under a shim instead. It is
 preserved so the development history is legible. `modern/` is a compiling
 design study and a local demo of one 2002 bug — not a metasearch service to
-deploy.
+deploy. [`jsearxng/`](jsearxng/) is the part that *is* a working tool: the same
+design, in Java, against engines that fight back (see
+[The living descendant](#the-living-descendant-jsearxng)).
 
 ---
 
@@ -147,6 +149,7 @@ refs/                        GB8567-88 standard archive, 使用说明书, relate
 artifacts/Classes/           compiled .class output (stale, see caveat below)
 modern/                       compiling reference redesign + tests, incl. a live mode (not the original)
 runner/                       runs the untouched Sources/ applet on a modern JDK (local shim + demo engine + optional SearXNG bridge)
+jsearxng/                     the living descendant: a real metasearcher in Java, 2002 UI, six engines
 versions/                     the other three generations
   2000-08/                   v1.2.3 baseline
   2001-12/JSApplet/          last large version
@@ -225,24 +228,29 @@ describe.
 
 ---
 
-## The descendant
+## The living descendant: `jsearxng/`
 
-The skeleton outlived the archive. [**JSearXNG**](https://github.com/uhuntu/JSearXNG)
-is the same design — fan out, scrape, deduplicate, aggregate, and report every
-engine's failure honestly — running for real, in Java, against engines that
-fight back. It keeps the 2002 applet's face (the steel-blue frame, the result
-list, the `>>预览` / `>>状态` / `>>消息` panes, `smsCh` and `smlCh` as working
-controls) and points it at a local SearXNG's engine pool plus a few no-key
-public APIs. The JSON reader inside it was copied from `modern/` — the lineage
-helping its own descendant.
+The skeleton outlived the archive. [`jsearxng/`](jsearxng/) is the same design —
+fan out, scrape, deduplicate, aggregate, and report every engine's failure
+honestly — running for real, in Java, against engines that fight back. It keeps
+the 2002 applet's face (the steel-blue frame, the result list, the
+`>>预览` / `>>状态` / `>>消息` panes, `smsCh` and `smlCh` as working controls) and
+points it at a local SearXNG's engine pool plus a few no-key public APIs. The
+JSON reader inside it was copied from `modern/` — the lineage helping its own
+descendant.
 
-It lives in its own repository on purpose. This one is an archive: it exists to
-preserve and explain the 2002 artifact, and [ROADMAP.md](ROADMAP.md) keeps
-"building a metasearch service" out of scope. A tool meant to be used has to
-live with anti-bot measures, upstream drift and timeouts, none of which is
-archive work. So the division is deliberate: `versions/` and `Sources/` hold
-the artifact, `modern/` is the design contrast, `runner/` proves the original
-still runs, and JSearXNG is what the design became.
+```sh
+cd jsearxng && java JSearXNG.java     # http://127.0.0.1:8092/
+cd jsearxng && ./test.sh              # 117 checks, no network
+```
+
+It is the only directory here whose subject is the present rather than the past,
+and so the only one that changes when an upstream changes — its commits name
+what broke. `versions/` and `Sources/` hold the artifact, `modern/` is the design
+contrast, `runner/` proves the original still runs, and `jsearxng/` is what the
+design became. Its 14 commits were merged in from the standalone
+[`uhuntu/JSearXNG`](https://github.com/uhuntu/JSearXNG) repository, which now
+only points back here.
 
 ---
 
@@ -267,5 +275,5 @@ record, including the backup checksum, is in [PROVENANCE.md](PROVENANCE.md).
 - **[QUICKSTART.md](QUICKSTART.md)** — Run the `modern/` tests
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — What this archive accepts
 - **[ROADMAP.md](ROADMAP.md)** — In scope vs out of scope
-- **[JSearXNG](https://github.com/uhuntu/JSearXNG)** — The living descendant: this
-  skeleton, running for real, in its own repository
+- **[JSearXNG](jsearxng/)** — The living descendant: this skeleton, running for
+  real, in Java, against engines that fight back
