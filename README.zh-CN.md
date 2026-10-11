@@ -135,6 +135,23 @@ versions/                    历史保存的其余三个版本快照（2000-08�
 
 ---
 
+## 活着的后代
+
+这副骨架比档案活得更久。[**JSearXNG**](https://github.com/uhuntu/JSearXNG)
+是同一套设计——扇出、抓取、去重、聚合，并如实报告每个引擎的失败——在 Java
+里真实运行，对面是会还手的引擎。它保留了 2002 年 applet 的面孔（钢蓝外框、
+结果列表、`>>预览` / `>>状态` / `>>消息` 三个窗格，以及 `smsCh`、`smlCh` 两个
+真控件），并把它们指向本地 SearXNG 的引擎池和几个无需密钥的公开 API。它内部
+的 JSON 解析器复制自 `modern/`——血脉在帮自己的后代。
+
+它刻意住在另一个仓库里。本仓库是档案：存在是为了保存并解释 2002 年的实物，
+[ROADMAP.md](ROADMAP.md) 也把"构建元搜索服务"列在范围外。一个拿来用的工具
+必须面对反爬、上游变动和超时——这些没有一样是档案该维护的。所以这个分工是
+故意的：`versions/` 与 `Sources/` 保存实物，`modern/` 是设计对照，`runner/`
+证明原物还能跑，而 JSearXNG 是这套设计的归宿。
+
+---
+
 ## 现代参考草图 (`modern/`)
 
 `modern/` 用 JDK 11+ 标准库对照说明 2002 年设计本可如何拆分（零第三方依赖）。默认测试使用仓库内 2001 年 HTML 夹具，不访问现网搜索引擎。`.\build.ps1 -Web` 只是本地演示当年用 URL 做引擎主键离“丢掉中文 Google”只差一个空格，不是对外 API。要运行未经改动的原始 2002 程序本身，见 **[runner/](runner/README.md)**。
@@ -156,3 +173,4 @@ cd modern
 - **[FAQ.md](FAQ.md)** — 常见问题解答
 - **[ROADMAP.md](ROADMAP.md)** — 范围内 / 范围外
 - **[PROVENANCE.md](PROVENANCE.md)** — 数字化抢救与版本溯源记录
+- **[JSearXNG](https://github.com/uhuntu/JSearXNG)** — 活着的后代：这副骨架在真实世界里跑起来的样子，另立门户

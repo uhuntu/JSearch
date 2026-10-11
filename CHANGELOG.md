@@ -100,6 +100,18 @@ are archive housekeeping. This repo does not version a live search service.
   to see the original's fan-out, and the only way to tell which engine a shared
   URL was credited to.
 
+- Named the descendant in the archive's own front matter. The skeleton has a
+  living continuation — [JSearXNG](https://github.com/uhuntu/JSearXNG), the same
+  fan-out/scrape/dedup design in Java with the 2002 applet UI reborn, running
+  against engines that fight back — but until now the only mention of it was a
+  bare `../JSearXNG` filesystem path in `modern/README.md`, dead text to anyone
+  reading on GitHub. The root READMEs gain a "The descendant" / 活着的后代
+  section, `INDEX.md` a "Not in this repository" note, `ROADMAP.md`'s
+  out-of-scope list an explanation that the excluded item was done elsewhere
+  rather than refused, and `modern/README.md` a real link. No code moved: the
+  split is deliberate, and this only makes the lineage legible in both
+  directions.
+
 ### Fixed
 - `modern/`'s `HttpPageFetcher` sent no `User-Agent`, so it went out as
   `Java/17` and Wikipedia answered 403 to every live search. It now identifies

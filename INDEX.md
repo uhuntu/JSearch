@@ -18,6 +18,14 @@ archive, not to run a product.
 | [ROADMAP.md](ROADMAP.md) | In scope vs out of scope |
 | [MIGRATION.md](MIGRATION.md) | Why this is not a starter kit |
 
+## Not in this repository
+
+[**JSearXNG**](https://github.com/uhuntu/JSearXNG) — the living descendant of
+this skeleton, in its own repository. This archive keeps the 2002 artifact, the
+design contrast in `modern/`, and the proof in `runner/` that the original still
+runs; JSearXNG is what the design became when it was pointed at engines that
+fight back. See "The descendant" in [README.md](README.md).
+
 ## Also here
 
 [QUICKSTART.md](QUICKSTART.md), [FAQ.md](FAQ.md), [OVERVIEW.md](OVERVIEW.md),

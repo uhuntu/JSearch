@@ -313,5 +313,6 @@ not as something to deploy. The `live` mode is the exception that proves the
 rule rather than breaking it — it runs on published contracts, not on scraped
 pages, and it is a demonstration that the design survives contact with a real
 network, not a service. A metasearch tool meant to be used belongs in a
-different repo, and one exists: `../JSearXNG` applies these same lessons
-(the collector, the fan-out, the relevance check) to a live aggregator.
+different repo, and one exists: [JSearXNG](https://github.com/uhuntu/JSearXNG)
+applies these same lessons (the collector, the fan-out, the relevance check) to
+a live aggregator.

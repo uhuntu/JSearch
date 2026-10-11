@@ -24,6 +24,12 @@ rate limiting, or a deployable aggregator.
 - “Production adaptation” of `modern/`
 - Community-growth kits that do not help someone read the 2002 source
 
+The last two are not refusals so much as a division of labour: a tool meant to
+be used has to live with anti-bot measures, upstream drift and timeouts, and
+none of that is archive work. That tool exists —
+[JSearXNG](https://github.com/uhuntu/JSearXNG), described under "The descendant"
+in the README.
+
 ## Maybe, if they serve the archive
 
 - More historical context on early-2000s Chinese software practice and GB8567-88

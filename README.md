@@ -225,6 +225,27 @@ describe.
 
 ---
 
+## The descendant
+
+The skeleton outlived the archive. [**JSearXNG**](https://github.com/uhuntu/JSearXNG)
+is the same design — fan out, scrape, deduplicate, aggregate, and report every
+engine's failure honestly — running for real, in Java, against engines that
+fight back. It keeps the 2002 applet's face (the steel-blue frame, the result
+list, the `>>预览` / `>>状态` / `>>消息` panes, `smsCh` and `smlCh` as working
+controls) and points it at a local SearXNG's engine pool plus a few no-key
+public APIs. The JSON reader inside it was copied from `modern/` — the lineage
+helping its own descendant.
+
+It lives in its own repository on purpose. This one is an archive: it exists to
+preserve and explain the 2002 artifact, and [ROADMAP.md](ROADMAP.md) keeps
+"building a metasearch service" out of scope. A tool meant to be used has to
+live with anti-bot measures, upstream drift and timeouts, none of which is
+archive work. So the division is deliberate: `versions/` and `Sources/` hold
+the artifact, `modern/` is the design contrast, `runner/` proves the original
+still runs, and JSearXNG is what the design became.
+
+---
+
 ## Provenance
 
 Recovered and reorganized on 2026-09-28. Files were moved, not edited, with one
@@ -246,3 +267,5 @@ record, including the backup checksum, is in [PROVENANCE.md](PROVENANCE.md).
 - **[QUICKSTART.md](QUICKSTART.md)** — Run the `modern/` tests
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — What this archive accepts
 - **[ROADMAP.md](ROADMAP.md)** — In scope vs out of scope
+- **[JSearXNG](https://github.com/uhuntu/JSearXNG)** — The living descendant: this
+  skeleton, running for real, in its own repository
