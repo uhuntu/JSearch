@@ -325,12 +325,28 @@ else
         # two; the bridge scrapes five and adds four, because the fifth is the
         # URL the demo engine already put in the table.
         count_is '^\[runner\] result\[[0-9]\+\] = ' 6 "six results: two demo + four new from the bridge"
-        expect "Results:2 From:LocalDemo" "the demo engine delivered its two results"
-        expect "Results:4 From:SearXNG" "the bridge scraped five and added four — the fifth was shared"
         count_fixed 'http://localhost:8901/jsearch-reborn' 1 \
             "the URL both engines returned is in the list exactly once"
         expect "| from: LocalDemo" "results are credited to the demo engine"
         expect "| from: SearXNG" "results are credited to the bridge engine"
+
+        # Which engine wins the shared URL is a race between the two search
+        # threads, so the per-engine split is 4+2 or 5+1 depending on
+        # scheduling — asserting either number is asserting a race. What is not
+        # racy is that the two engines' own counts sum to the total, and that
+        # both are credited above. The first CI run of this mode failed on the
+        # split, which is how the race was found: the local run had happened to
+        # schedule it one way.
+        CHECKS=$((CHECKS + 1))
+        SUM=$(sed -n 's/.*Results:\([0-9][0-9]*\).*/\1/p' "$LOG" \
+              | awk '{t += $1} END {print t + 0}')
+        if [ "$SUM" = "6" ]; then
+            echo "  ok    the two engines' own counts sum to the six results (found $SUM)"
+        else
+            echo "  FAIL  the two engines' own counts sum to the six results"
+            echo "        expected 6, found $SUM"
+            FAILURES=$((FAILURES + 1))
+        fi
     fi
 fi
 

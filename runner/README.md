@@ -147,9 +147,13 @@ The two fixture modes add what a single demo page cannot reach:
   — the tens-digit offset and the missing page terminator — both fail quietly.
   Each has its own assertion, and reverting either fix makes them fail.
 - **Cross-engine dedup.** `--combined` hands the original two engines with one
-  URL in common: the demo engine contributes two results, the bridge scrapes
-  five and adds four, and the shared URL appears exactly once. The per-engine
-  status lines are what make the arithmetic visible.
+  URL in common: six results from two engines that returned seven between them,
+  and the shared URL in the list exactly once. Which engine *wins* the shared
+  URL is a race between the two search threads, so the per-engine split is 4+2
+  or 5+1 depending on scheduling — the assertion is on their sum, not on either
+  number, because the first CI run failed on the split and that is a race being
+  asserted rather than a defect. The per-engine status lines are what make the
+  arithmetic visible at all.
 
 All of them match ASCII the runner prints verbatim, so the check never depends
 on the Chinese strings decoding a particular way in the log. The demo server's

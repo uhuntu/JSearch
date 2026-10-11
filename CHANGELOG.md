@@ -146,6 +146,16 @@ are archive housekeeping. This repo does not version a live search service.
   suite here to need more than 11, and the comment in `tests.yml` that claimed
   one JDK covered the workflow is gone with it.
 
+- `verify.sh --combined` asserted a race. It checked that the demo engine's own
+  status line read `Results:2` and the bridge's `Results:4`, but which engine
+  wins the URL the two have in common depends on how the two search threads are
+  scheduled, so the split is 4+2 or 5+1 — and the first CI run of the mode got
+  5+1 and failed. The total, the shared URL appearing exactly once, and both
+  engines being credited are all deterministic, so those are what is asserted
+  now, plus a new check that the two engines' own counts sum to the total. The
+  local runs had happened to schedule it the same way every time, which is the
+  only reason this survived them.
+
 ### Fixed
 - `modern/`'s `HttpPageFetcher` sent no `User-Agent`, so it went out as
   `Java/17` and Wikipedia answered 403 to every live search. It now identifies
