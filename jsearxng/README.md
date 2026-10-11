@@ -24,6 +24,13 @@ step: the source is executed directly. The JSON reader inside is copied from the
 teaching sketch ([`../modern/`](../modern/)), which is the lineage helping its
 own descendant.
 
+**JDK 16 or later.** The floor is 16, not the 11 the rest of this repository
+targets: the code uses records, `instanceof` patterns and text blocks (the HTML
+template is one). `test.sh` passes `--release 16`, so an older JDK fails with
+"release version not supported" rather than with parse errors inside the
+template — which is exactly what happened the first time this suite ran on CI's
+JDK 11, and the reason the floor is written down instead of assumed.
+
 ```sh
 java JSearXNG.java         # http://127.0.0.1:8092/
 ```

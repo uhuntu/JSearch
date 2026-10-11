@@ -135,6 +135,17 @@ are archive housekeeping. This repo does not version a live search service.
   follows: `jsearxng/` changes when an upstream changes, and its commits are
   expected to name what broke.
 
+- `jsearxng/` needs **JDK 16**, not the 11 the rest of this repository targets,
+  and nothing said so until it ran in CI. It uses records, `instanceof` patterns
+  and text blocks (the HTML template is one), so the first CI run on JDK 11 died
+  with a hundred parse errors inside the CSS — the standalone repository had no
+  CI of its own, so the floor was never tested against anything. The job now
+  uses 17, `test.sh` passes `--release 16` so an old JDK fails with "release
+  version not supported" instead of errors inside the template, and the floor is
+  written down in `jsearxng/README.md` rather than assumed. This is the first
+  suite here to need more than 11, and the comment in `tests.yml` that claimed
+  one JDK covered the workflow is gone with it.
+
 ### Fixed
 - `modern/`'s `HttpPageFetcher` sent no `User-Agent`, so it went out as
   `Java/17` and Wikipedia answered 403 to every live search. It now identifies
