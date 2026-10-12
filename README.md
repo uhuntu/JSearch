@@ -230,9 +230,11 @@ so even the mangled path has moved around.
 ## Why this cannot be revived
 
 - **Applets are gone.** The Java Plug-in / NPAPI was removed from all major
-  browsers between 2015 and 2021, and applet support was dropped from the JDK
-  itself (deprecated in JDK 9, removed in JDK 11). `JSearch.cab` is an ActiveX
-  CAB targeting Internet Explorer on Windows.
+  browsers between 2015 and 2021, and the JDK has since removed its own half
+  of the story: the `appletviewer` tool went in JDK 11 (JDK-8200549), the
+  Applet API was deprecated in JDK 9 (JEP 289), deprecated for removal in
+  JDK 17 (JEP 398), and removed in JDK 26 (JEP 504). `JSearch.cab` is an
+  ActiveX CAB targeting Internet Explorer on Windows.
 - **The scraped engines are gone.** `JSEngines.txt` points at
   `www.google.com/search?q=…` and `www1.baidu.com/baidu?word=…`. The scraper
   strategy is fixed-offset character matching (`stepOneChar()` shuffling a
@@ -251,7 +253,9 @@ SearXNG bridge adds an engine whose pages a small translator rewrites into the
 2002 dialect — so the untouched scraper does read live results, with the
 anti-bot fighting done on the far side of the bridge. The shipped
 configuration itself remains exactly as blocked as the four points above
-describe.
+describe. Where `runner/` is concerned the end is dated rather than
+hypothetical: JDK 25 is the last release that will compile the untouched
+sources, because JEP 504 removes `java.applet` in JDK 26.
 
 ---
 

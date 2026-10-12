@@ -289,6 +289,22 @@ are archive housekeeping. This repo does not version a live search service.
 - `modern/README.md` — Updated build instructions to reference build scripts
 - `README.md` — Added "Further reading" section linking to new documentation
 
+### Changed (JDK timeline and encoding coverage)
+- `README.md`, `runner/README.md` and the `runner` job's comment in
+  `.github/workflows/tests.yml` now say what the JDK actually did. JDK 11
+  removed the `appletviewer` tool (JDK-8200549), not the Applet API: that was
+  deprecated in JDK 9 (JEP 289), deprecated for removal in JDK 17 (JEP 398),
+  and removed in JDK 26 (JEP 504). `Sources/` therefore compiles on JDK 25 and
+  not on 26, which makes the runner's ceiling a date rather than a
+  possibility.
+- `EncodingGuard.checkUtf8Files()` now owns the docs, sources and scripts of
+  `runner/`, `jsearxng/` and `modern/`, as well as `modern/src` and the root
+  Markdown: 94 files checked, up from 71. Extensions are matched
+  case-insensitively, so `runner/JSENGINES.TXT` is covered. Confirmed by
+  re-encoding `runner/README.md` as GBK, which the guard now reports as
+  "expected UTF-8 but is GBK" and exits 1 on; the file was restored
+  byte-for-byte.
+
 ## [2.0.0.0] - 2002-03
 
 ### Fixed

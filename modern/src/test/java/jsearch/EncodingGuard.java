@@ -57,9 +57,10 @@ import java.util.stream.Stream;
  *       Western European punctuation, so it is ISO-8859-1 rather than GBK. The
  *       README hedges with "almost every original file"; this is the exception,
  *       and naming it is cheaper than pretending it away.</li>
- *   <li>{@code modern/src/**}{@code / *.java} and the {@code *.md} files — written
- *       during the archival pass, so they must be UTF-8: the mirror image of the
- *       first group, stopping GBK from spreading into new writing.</li>
+ *   <li>{@code modern/src/**}{@code / *.java} and the {@code *.md} files, plus
+ *       every text file in {@link #ARCHIVAL_TREES} — written during the archival
+ *       pass, so they must be UTF-8: the mirror image of the first group,
+ *       stopping GBK from spreading into new writing.</li>
  * </ul>
  *
  * <p>Run it as {@code java -cp out jsearch.EncodingGuard}; it exits non-zero if
@@ -94,10 +95,30 @@ public final class EncodingGuard {
     private static final String LATIN1_NAME = "ISO-8859-1";
 
     private static final Set<String> TEXT_EXTENSIONS = new HashSet<>(Arrays.asList(
-            ".java", ".html", ".htm", ".txt", ".md", ".dat"));
+            ".java", ".html", ".htm", ".txt", ".md", ".dat",
+            ".sh", ".ps1", ".py", ".cmd", ".properties", ".xml"));
 
     private static final List<String> ORIGINAL_ROOTS = Arrays.asList(
             "Sources", "ENGINES", "Releases", "versions", "docs");
+
+    /**
+     * Trees written by the archival pass, after the one that produced
+     * {@code modern/src}. {@link #checkUtf8Files()} walks each of them one level
+     * deep for the text kinds below; {@code modern/src} is walked recursively
+     * instead, because its Java sits under package directories.
+     */
+    private static final List<String> ARCHIVAL_TREES = Arrays.asList(
+            "runner", "jsearxng", "modern");
+
+    /**
+     * The text kinds those trees carry. All of them are UTF-8 here, and the
+     * Markdown is the one where a conversion is quietest: a converted
+     * {@code .md} still reads, as mojibake, and nothing else in the repository
+     * ever looks at it.
+     */
+    private static final List<String> ARCHIVAL_TEXT_EXTENSIONS = Arrays.asList(
+            ".md", ".java", ".sh", ".ps1", ".py", ".cmd", ".txt",
+            ".properties", ".xml");
 
     /** The original artifacts, relative to the archive root. */
     private static final List<String> GBK_FILES = Arrays.asList(
@@ -235,6 +256,13 @@ public final class EncodingGuard {
         checkTree("modern/src", ".java", true, found);
         checkTree(".", ".md", false, found);
         checkTree("docs", ".md", false, found);
+        // The trees added after that first pass carry the same kinds of file,
+        // and the same wrong-editor save is no less invisible in them.
+        for (String tree : ARCHIVAL_TREES) {
+            for (String extension : ARCHIVAL_TEXT_EXTENSIONS) {
+                checkTree(tree, extension, false, found);
+            }
+        }
         return found;
     }
 
@@ -336,7 +364,9 @@ public final class EncodingGuard {
         }
         for (Path file : textFiles(base, recursive)) {
             String rel = rel(file);
-            if (rel.endsWith(extension)) {
+            // Lower-cased on both sides, the way textFiles() already chooses its
+            // candidates: the runner's engine table is JSENGINES.TXT.
+            if (rel.toLowerCase().endsWith(extension)) {
                 report(rel, UTF8_EXPECTATION, found);
             }
         }

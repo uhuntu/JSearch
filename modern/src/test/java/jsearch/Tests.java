@@ -106,7 +106,7 @@ public final class Tests {
         // The encoding the archive is preserved in
         testArchive("a UTF-8 copy of JSEngines.txt is caught", Tests::conversionIsCaught);
         testArchive("original files are still GBK and still present", Tests::originalFilesAreGbk);
-        testArchive("modern sources and Markdown docs are UTF-8", Tests::archivalFilesAreUtf8);
+        testArchive("docs, sources and scripts of the archival pass are UTF-8", Tests::archivalFilesAreUtf8);
         testArchive("every original text file has an encoding expectation", Tests::noUnlistedFiles);
 
         System.out.println();

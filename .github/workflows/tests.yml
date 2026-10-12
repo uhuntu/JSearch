@@ -72,11 +72,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 11, like the test and encoding jobs: the archive's floor, and the one
-      # java.applet is still present in. (jsearxng/ runs on 17 — it needs 16+,
-      # and it is the only directory here not held to the archive's target.)
-      # java.applet is deprecated for removal here but still present; the
-      # applet will stop compiling the day that changes, which is the point.
+      # 11, like the test and encoding jobs: the archive's floor. (jsearxng/
+      # runs on 17 — it needs 16+, and it is the only directory here not held
+      # to the archive's target.) java.applet is deprecated for removal here
+      # but still present, and stays present through JDK 25; JEP 504 removes
+      # it in JDK 26, the release that stops runner/ compiling. This job pins
+      # 11, so it stays on the artifact's own floor rather than near that edge.
       - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:

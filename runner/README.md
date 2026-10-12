@@ -28,8 +28,9 @@ if it is blocked, run it once as
 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (per-user, one time).
 
 `run.sh` compiles into `classes/` on first run (JDK 17 tested; any JDK whose
-`java.applet` still exists works — the API is deprecated for removal, so very
-new JDKs may eventually break this), starts `DemoServer.py` on
+`java.applet` still exists works — the API was deprecated for removal in JDK 17
+and is removed in JDK 26 by JEP 504, so JDK 25 is the last release that will
+compile this), starts `DemoServer.py` on
 `127.0.0.1:8901` if it is not already running, and launches the applet.
 
 Flags, for unattended verification:
