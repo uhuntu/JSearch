@@ -28,3 +28,6 @@ runner-combined.log
 
 # jsearxng/ build output (the suite compiles into out/, like modern/)
 jsearxng/out/
+
+# ZCode IDE workspace rules (per-user, auto-synced from .gitignore)
+.zcodeignore
