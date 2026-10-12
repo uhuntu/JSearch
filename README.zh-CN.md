@@ -175,8 +175,8 @@ cd modern
 - **[GENERATIONS.md](docs/GENERATIONS.md)** — 四个 `versions/` 快照的逐项实测对比
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** — 原始设计与现代设计的架构对比图解
 - **[modern/README.md](modern/README.md)** — 现代参考实现设计文档与使用指南
-- **[MIGRATION.md](MIGRATION.md)** — 为何这不是生产脚手架
-- **[FAQ.md](FAQ.md)** — 常见问题解答
-- **[ROADMAP.md](ROADMAP.md)** — 范围内 / 范围外
+- **[INDEX.md](INDEX.md)** — 文档导航与建议阅读顺序
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — 贡献范围：接受什么，不接受什么
+- **[GLOSSARY.md](GLOSSARY.md)** — 术语表：GB8567-88、GBK、Applet 等
 - **[PROVENANCE.md](PROVENANCE.md)** — 数字化抢救与版本溯源记录
 - **[jsearxng/](jsearxng/)** — 活着的后代：这副骨架在真实世界里跑起来的样子，Java 单文件，六个引擎

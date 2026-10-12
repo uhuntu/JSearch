@@ -6,6 +6,25 @@ scraped is dead or blocking; `modern/` is a teaching sketch, and `runner/`
 proves the untouched artifact still runs. `jsearxng/` is the part that is a
 real, working tool — the same design pointed at engines that fight back.
 
+## Scope
+
+**In scope:** keeping the original trees (`Sources/`, `versions/`, `Releases/`,
+`ENGINES/`, the GB8567-88 set) frozen and GBK-safe; keeping provenance honest;
+`modern/` as a compiling contrast to the 2002 design (tests, archive fixtures,
+the URL-key collision demo); corrections to the analysis; and CI that runs the
+tests, the encoding guard, and `runner/verify.sh` — the only automated check
+that the original applet still runs, scrapes and dedups.
+
+**Out of scope:** reviving the applet; porting the UI; and turning `modern/`
+into a product — no new live engines, caching, rate limits, or a deployable
+aggregator there. That work exists already, in [`jsearxng/`](jsearxng/), and is
+maintained as the live web changes. `modern/` keeps its value by stopping where
+it does.
+
+Nothing here is a deployed service. If you find a problem in `modern/` that
+would matter to someone running it locally, report it to the maintainer
+directly rather than in a public issue.
+
 ## What contributions are welcome
 
 ### Documentation and analysis

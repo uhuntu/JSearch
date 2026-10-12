@@ -166,6 +166,33 @@ to.** The `.class` files in each `versions/` snapshot are more trustworthy.
 
 ---
 
+## Running it
+
+Everything below needs **JDK 11+** ([Adoptium](https://adoptium.net/)).
+Archive-fixture tests skip if `ENGINES/` / `Releases/` are missing.
+
+| What | Command |
+|---|---|
+| Tests (offline) | `cd modern && .\build.ps1 -Test` (PowerShell) or `./build.sh -t` (bash) |
+| Web demo of the URL-key bug | `cd modern && .\build.ps1 -Web` → http://localhost:8081 |
+| Console demo | `cd modern && .\build.ps1` then `java "-Dfile.encoding=UTF-8" -cp out jsearch.Demo` |
+| The untouched 2002 applet | `cd runner && ./run.sh` |
+| The living descendant | `cd jsearxng && java JSearXNG.java` → http://127.0.0.1:8092/ |
+| Encoding audit | `.\scripts\verify-gbk.ps1` (Windows), or `java -Dfile.encoding=UTF-8 -cp out jsearch.EncodingGuard` after building `modern/` |
+
+`modern/` is a **design study, not a starter kit** — its demo server replays the
+2002 URL-key collision against archive fixtures. Do not deploy it or treat it as
+a production path; `jsearxng/` is the part meant to be used (see
+[CONTRIBUTING.md](CONTRIBUTING.md) for what is in scope).
+
+Troubleshooting:
+
+- *"GBK charset not available"* — minimal JDK installs may drop GBK; use a full JDK (Adoptium).
+- *"archive root not found"* — run tests from `modern/`, or set `-Djsearch.archive=<repo root>`.
+- *Compilation fails* — check `java -version` is 11 or later.
+
+---
+
 ## Analysis
 
 The code-level findings live in [ANALYSIS.md](docs/ANALYSIS.md):
@@ -266,14 +293,26 @@ record, including the backup checksum, is in [PROVENANCE.md](PROVENANCE.md).
 
 ## Further reading
 
+- **[INDEX.md](INDEX.md)** — Documentation map and suggested reading order
 - **[ANALYSIS.md](docs/ANALYSIS.md)** — Detailed design defect analysis and the deadlock patch
 - **[GENERATIONS.md](docs/GENERATIONS.md)** — The four snapshots compared by measurement
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** — Visual comparison of original vs modern design
 - **[modern/README.md](modern/README.md)** — Reference design: how it should have been built
-- **[MIGRATION.md](MIGRATION.md)** — Why this is not a production starter kit
-- **[FAQ.md](FAQ.md)** — Frequently asked questions
-- **[QUICKSTART.md](QUICKSTART.md)** — Run the `modern/` tests
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — What this archive accepts
-- **[ROADMAP.md](ROADMAP.md)** — In scope vs out of scope
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — What this archive accepts, and what is in scope
+- **[GLOSSARY.md](GLOSSARY.md)** — Terms: GB8567-88, GBK, applet, and the rest
 - **[JSearXNG](jsearxng/)** — The living descendant: this skeleton, running for
   real, in Java, against engines that fight back
+
+## Citing
+
+If you use this archive in academic work:
+
+```bibtex
+@misc{jsearch-archive,
+  title={JSearch: A Software Archive (1999-2002)},
+  author={Lin, Hunt},
+  year={2026},
+  publisher={GitHub},
+  howpublished={\url{https://github.com/uhuntu/JSearch}}
+}
+```
