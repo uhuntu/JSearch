@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +39,13 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,6 +57,8 @@ public class JSearXNG {
             "(KHTML, like Gecko) Chrome/126.0 Safari/537.36";
     static final Duration FETCH_TIMEOUT = Duration.ofSeconds(6);
     static final int RESULTS_PER_ENGINE = 8;
+    static final Duration SEARCH_TIMEOUT = Duration.ofSeconds(8);
+    static final SearchRunner SEARCHES = new SearchRunner(8, 64);
 
     static final HttpClient HTTP = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
@@ -345,12 +355,21 @@ public class JSearXNG {
      */
     static boolean sanityOk(String query, List<Result> hits) {
         List<String> tokens = new ArrayList<>();
-        for (String t : query.toLowerCase().split("\\W+")) {
-            if (t.length() > 2) tokens.add(t);
+        Matcher words = Pattern.compile("\\p{IsHan}+|[\\p{L}\\p{N}_&&[^\\p{IsHan}]]+")
+                .matcher(query.toLowerCase(Locale.ROOT));
+        while (words.find()) {
+            String t = words.group();
+            if (Character.UnicodeScript.of(t.codePointAt(0)) == Character.UnicodeScript.HAN) {
+                // Overlapping Han pairs tolerate words separated in a title or snippet.
+                int[] chars = t.codePoints().toArray();
+                for (int i = 0; i + 1 < chars.length; i++) {
+                    tokens.add(new String(chars, i, 2));
+                }
+            } else if (t.length() > 2) tokens.add(t);
         }
         if (tokens.isEmpty() || hits.isEmpty()) return true;
         for (Result r : hits) {
-            String blob = (r.title() + " " + r.snippet() + " " + r.url()).toLowerCase();
+            String blob = (r.title() + " " + r.snippet() + " " + r.url()).toLowerCase(Locale.ROOT);
             for (String t : tokens) {
                 if (blob.contains(t)) return true;
             }
@@ -364,49 +383,104 @@ public class JSearXNG {
     }
 
     static SearchData runSearch(String query, Set<String> engineSel, Integer speed, Integer levels) {
-        long t0 = System.currentTimeMillis();
         List<EngineEntry> chosen = new ArrayList<>();
         for (EngineEntry e : ENGINES) {
-            if (engineSel == null || engineSel.isEmpty() || engineSel.contains(e.name())) {
-                chosen.add(e);
-            }
+            if (engineSel == null || engineSel.isEmpty() || engineSel.contains(e.name())) chosen.add(e);
         }
         if (chosen.isEmpty()) chosen = ENGINES;
-        int depth = Math.max(1, Math.min(levels == null ? RESULTS_PER_ENGINE : levels, 16));
-        int workers = Math.max(1, Math.min(speed == null ? chosen.size() : speed, 8));
+        return SEARCHES.search(query, chosen, speed, levels, SEARCH_TIMEOUT);
+    }
 
-        ExecutorService pool = Executors.newFixedThreadPool(workers);
-        List<Future<Outcome>> futures = new ArrayList<>();
-        for (EngineEntry entry : chosen) {
-            futures.add(pool.submit(() -> {
-                long start = System.currentTimeMillis();
-                try {
-                    List<Result> hits = entry.fn().run(query);
-                    hits = hits.subList(0, Math.min(hits.size(), depth)); // smlCh
-                    if (!sanityOk(query, hits)) {
-                        return new Outcome(entry.name(), List.of(),
-                                "response failed the relevance check (query terms absent) — likely a bot-block page",
-                                System.currentTimeMillis() - start);
-                    }
-                    return new Outcome(entry.name(), hits, null, System.currentTimeMillis() - start);
-                } catch (Exception exc) {
-                    return new Outcome(entry.name(), List.of(),
-                            exc.getClass().getSimpleName() + ": " + exc.getMessage(),
-                            System.currentTimeMillis() - start);
-                }
-            }));
+    /** A shared bounded pool; injected engines and budget also make scheduling testable. */
+    static final class SearchRunner implements AutoCloseable {
+        private final ThreadPoolExecutor pool;
+
+        SearchRunner(int workers, int queueSize) {
+            pool = new ThreadPoolExecutor(workers, workers, 0, TimeUnit.MILLISECONDS,
+                    new ArrayBlockingQueue<>(queueSize), task -> {
+                        Thread thread = new Thread(task, "jsearxng-engine");
+                        thread.setDaemon(true);
+                        return thread;
+                    }, new ThreadPoolExecutor.AbortPolicy());
         }
-        List<Outcome> outcomes = new ArrayList<>();
-        for (Future<Outcome> f : futures) {
+
+        SearchData search(String query, List<EngineEntry> engines, Integer speed,
+                          Integer levels, Duration budget) {
+            if (budget.isZero() || budget.isNegative()) throw new IllegalArgumentException("positive budget required");
+            long t0 = System.nanoTime();
+            long deadline = t0 + budget.toNanos();
+            int depth = Math.max(1, Math.min(levels == null ? RESULTS_PER_ENGINE : levels, 16));
+            int workers = Math.min(engines.size(), Math.max(1, Math.min(speed == null ? engines.size() : speed, 8)));
+            AtomicInteger next = new AtomicInteger();
+            AtomicReferenceArray<Outcome> completed = new AtomicReferenceArray<>(engines.size());
+            List<Future<?>> futures = new ArrayList<>();
+            String unfinished = "search deadline exceeded";
             try {
-                outcomes.add(f.get());
-            } catch (Exception e) {
-                outcomes.add(new Outcome("?", List.of(), e.toString(), 0));
+                // Each lane calls one engine at a time, respecting both speed and the global limit.
+                for (int lane = 0; lane < workers; lane++) {
+                    futures.add(pool.submit(() -> {
+                        int index;
+                        while (!Thread.currentThread().isInterrupted() && System.nanoTime() < deadline
+                                && (index = next.getAndIncrement()) < engines.size()) {
+                            EngineEntry entry = engines.get(index);
+                            long start = System.nanoTime();
+                            Outcome outcome;
+                            try {
+                                List<Result> hits = entry.fn().run(query);
+                                hits = List.copyOf(hits.subList(0, Math.min(hits.size(), depth)));
+                                outcome = !sanityOk(query, hits)
+                                        ? new Outcome(entry.name(), List.of(),
+                                            "response failed the relevance check (query terms absent) — likely a bot-block page", elapsed(start))
+                                        : new Outcome(entry.name(), hits, null, elapsed(start));
+                            } catch (InterruptedException cancelled) {
+                                Thread.currentThread().interrupt();
+                                return;
+                            } catch (Exception failure) {
+                                outcome = new Outcome(entry.name(), List.of(),
+                                        failure.getClass().getSimpleName() + ": " + failure.getMessage(), elapsed(start));
+                            }
+                            if (System.nanoTime() <= deadline && !Thread.currentThread().isInterrupted()) {
+                                completed.set(index, outcome);
+                            }
+                        }
+                    }));
+                }
+                for (Future<?> future : futures) {
+                    long remaining = deadline - System.nanoTime();
+                    if (remaining <= 0) break;
+                    future.get(remaining, TimeUnit.NANOSECONDS);
+                }
+            } catch (TimeoutException deadlineReached) {
+                // Completed engines survive; pending and active lanes are cancelled below.
+            } catch (InterruptedException cancelled) {
+                unfinished = "search cancelled";
+                Thread.currentThread().interrupt();
+            } catch (RejectedExecutionException busy) {
+                unfinished = "search capacity exhausted";
+            } catch (java.util.concurrent.ExecutionException failure) {
+                unfinished = "search worker failed: " + failure.getCause();
+            } finally {
+                for (Future<?> future : futures) future.cancel(true);
+                pool.purge(); // cancelled queued work must not consume the next query's capacity
             }
+            List<Outcome> outcomes = new ArrayList<>();
+            for (int i = 0; i < engines.size(); i++) {
+                Outcome outcome = completed.get(i);
+                outcomes.add(outcome == null
+                        ? new Outcome(engines.get(i).name(), List.of(), unfinished, elapsed(t0)) : outcome);
+            }
+            return aggregate(outcomes, elapsed(t0));
         }
-        pool.shutdown();
 
-        // smsCh bounded the pool above; here the 2002 URL-dedup, across layers
+        @Override public void close() { pool.shutdownNow(); }
+    }
+
+    static long elapsed(long start) {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+    }
+
+    static SearchData aggregate(List<Outcome> outcomes, long durationMs) {
+        // Preserve engine order and the existing cross-engine URL deduplication.
         Set<String> seen = new HashSet<>();
         List<Result> results = new ArrayList<>();
         int raw = 0;
@@ -418,7 +492,7 @@ public class JSearXNG {
                 }
             }
         }
-        return new SearchData(results, outcomes, System.currentTimeMillis() - t0, raw - results.size());
+        return new SearchData(results, List.copyOf(outcomes), durationMs, raw - results.size());
     }
 
     // ------------------------------------------------------------------
@@ -478,7 +552,7 @@ public class JSearXNG {
         <h3>查询内容</h3>
         <input class="querybox" type="search" name="q" value="${query}" autofocus>
         <div class="hint">搜索条件依所选搜索引擎而定。</div>
-        <button class="btn" type="submit">开始搜索</button><a class="btn" disabled title="服务器一次一查，无可停止">停止搜索</a><a class="btn" href="/">新建搜索</a>
+        <button class="btn" type="submit">开始搜索</button><a class="btn" disabled title="当前搜索尚不支持手动停止">停止搜索</a><a class="btn" href="/">新建搜索</a>
       </div>
       <div class="panel">
         <h3>结果</h3>
@@ -707,7 +781,13 @@ public class JSearXNG {
         }
         com.sun.net.httpserver.HttpServer server =
                 com.sun.net.httpserver.HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
-        server.setExecutor(Executors.newCachedThreadPool());
+        ExecutorService requests = Executors.newFixedThreadPool(8);
+        server.setExecutor(requests);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            server.stop(0);
+            requests.shutdownNow();
+            SEARCHES.close();
+        }));
         server.createContext("/", exchange -> {
             try {
                 Map<String, List<String>> params =

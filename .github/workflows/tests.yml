@@ -124,12 +124,11 @@ jobs:
 
   # jsearxng/ is the one directory whose subject is the present rather than the
   # past: a real metasearcher, in Java, against engines that fight back. Its
-  # suite is 117 checks on pure functions — the entity layer, query parsing,
-  # URL dedup keys, the poison check, Bing redirect unwrapping, escaping, the
-  # JSON reader, the page render — so it needs no network, no fixtures and no
-  # clock, which is exactly what makes it safe to gate a push on. The network
-  # half is the live service itself, plus each engine's own error reporting in
-  # the >>消息 pane; neither is reproducible in CI, and neither is claimed to be.
+  # suite covers result-processing functions and injected-engine scheduling:
+  # Unicode relevance, deadlines, partial failures, cancellation, shared worker
+  # limits and queue saturation. No external services or network are needed.
+  # Scheduling tests use latches and short budgets; live engine availability
+  # remains outside this CI gate.
   jsearxng:
     runs-on: ubuntu-latest
     env:

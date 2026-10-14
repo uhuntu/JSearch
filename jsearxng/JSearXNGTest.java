@@ -1,10 +1,7 @@
 /*
- * JSearXNG's test suite. Every check is on a pure function, so this needs no
- * network, no fixtures and no clock: the layers a search result passes through
- * before it reaches a browser (entity unescaping, query parsing, URL dedup
- * keys, the poison check, Bing redirect unwrapping, escaping, the JSON reader,
- * the page render) are all deterministic. The network half is covered by the
- * live service and by each engine's own error reporting.
+ * JSearXNG's test suite: pure result-processing checks and injected-engine
+ * scheduling tests. No external network or service is needed. Scheduling tests
+ * use latches and short deadlines to exercise cancellation and shared capacity.
  *
  * Several sections exist because a bug of exactly that shape already shipped
  * and was found by eye — the repeated-form-key collapse, the &amp; that
@@ -23,13 +20,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class JSearXNGTest {
 
     static int passed;
     static final List<String> failures = new ArrayList<>();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         section("unescape — the entity layer (a &amp; left in a URL broke dedup; a raw &#0183; showed in a preview)");
         testUnescape();
         section("parseParams — repeated keys (six checkboxes submitted as six engines= values once collapsed to one)");
@@ -38,6 +41,8 @@ public class JSearXNGTest {
         testNormalize();
         section("sanityOk — Bing serves popular pages instead of errors when it smells a bot");
         testSanityOk();
+        section("search scheduling — injected engines, deadlines and shared capacity");
+        testSearchRunner();
         section("unwrapBing — the ck/a tracking redirect hides the destination in base64url");
         testUnwrapBing();
         section("esc / fmt — what reaches the browser");
@@ -134,6 +139,15 @@ public class JSearXNGTest {
                         "self-hosted searxng guide", "https://example.com/searxng",
                         "docker compose up", "bing"))));
         ok("no hits means nothing to reject", JSearXNG.sanityOk("anything at all", List.of()));
+        ok("Chinese query rejects unrelated English results", !JSearXNG.sanityOk("量子计算", poison));
+        ok("two-character Chinese terms are checked", !JSearXNG.sanityOk("搜索", poison));
+        ok("Chinese word pairs match a segmented title", JSearXNG.sanityOk("量子计算",
+                List.of(hit("量子技术与计算科学", "https://example.com"))));
+        ok("mixed Chinese and English query matches Chinese", JSearXNG.sanityOk("Java中文搜索",
+                List.of(hit("中文搜索指南", "https://example.com"))));
+        ok("mixed query does not treat short English as significant", !JSearXNG.sanityOk("AI量子计算",
+                List.of(hit("AI news", "https://example.com"))));
+        ok("single Han character has insufficient evidence", JSearXNG.sanityOk("云", poison));
         // "go" splits to one token of length 2, which is filtered as noise
         ok("only short tokens means the check is skipped", JSearXNG.sanityOk("go", poison));
         ok("two-char tokens are ignored",
@@ -145,6 +159,153 @@ public class JSearXNGTest {
         ok("a URL mention counts",
                 JSearXNG.sanityOk("marginalia", List.of(new JSearXNG.Result(
                         "t", "https://marginalia.nu/", "", "hn"))));
+    }
+
+    static JSearXNG.Result hit(String title, String url) {
+        return new JSearXNG.Result(title, url, "", "stub");
+    }
+
+    static JSearXNG.EngineEntry engine(String name, JSearXNG.SearchFn fn) {
+        return new JSearXNG.EngineEntry(name, "test", fn);
+    }
+
+    static void testSearchRunner() throws Exception {
+        try (var runner = new JSearXNG.SearchRunner(3, 8)) {
+            var data = runner.search("java", List.of(
+                    engine("one", q -> List.of(hit("java first", "https://example.com/a"),
+                            hit("java next", "https://example.com/b"))),
+                    engine("bad", q -> { throw new IllegalStateException("HTTP 502"); }),
+                    engine("two", q -> List.of(hit("java duplicate", "https://example.com/a")))),
+                    3, 1, Duration.ofSeconds(2));
+            eq("results are capped and deduplicated across injected engines", 1, data.results().size());
+            eq("duplicate count survives aggregation", 1, data.duplicatesDropped());
+            eq("failed engine retains its identity", "bad", data.engines().get(1).name());
+            ok("failure is reported without losing other results", data.engines().get(1).error().contains("HTTP 502"));
+            eq("reports remain in configured engine order", "two", data.engines().get(2).name());
+        }
+
+        CountDownLatch slowStarted = new CountDownLatch(1);
+        CountDownLatch slowStopped = new CountDownLatch(1);
+        CountDownLatch fastDone = new CountDownLatch(1);
+        try (var runner = new JSearXNG.SearchRunner(2, 8)) {
+            long start = System.nanoTime();
+            var data = runner.search("java", List.of(
+                    engine("slow", q -> {
+                        slowStarted.countDown();
+                        try { new CountDownLatch(1).await(); }
+                        finally { slowStopped.countDown(); }
+                        return List.of();
+                    }),
+                    engine("fast", q -> {
+                        fastDone.countDown();
+                        return List.of(hit("java guide", "https://example.com/fast"));
+                    })), 2, 8, Duration.ofMillis(300));
+            ok("both engines ran before the deadline", slowStarted.getCount() == 0 && fastDone.getCount() == 0);
+            eq("a slow first engine does not discard a completed later engine", 1, data.results().size());
+            eq("unfinished engine reports the deadline", "search deadline exceeded", data.engines().get(0).error());
+            ok("overall budget bounds the wait", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) < 2000);
+            ok("deadline interrupts active work", slowStopped.await(2, TimeUnit.SECONDS));
+            var next = runner.search("java", List.of(engine("next", q -> List.of(hit("java next", "https://example.com")))),
+                    1, 8, Duration.ofSeconds(2));
+            eq("runner is reusable after a timeout", 1, next.results().size());
+        }
+
+        var callers = Executors.newFixedThreadPool(2);
+        CountDownLatch release = new CountDownLatch(1);
+        CountDownLatch started = new CountDownLatch(2);
+        AtomicInteger active = new AtomicInteger();
+        AtomicInteger peak = new AtomicInteger();
+        try (var runner = new JSearXNG.SearchRunner(2, 8)) {
+            JSearXNG.SearchFn blocked = q -> {
+                int n = active.incrementAndGet();
+                peak.accumulateAndGet(n, Math::max);
+                started.countDown();
+                try { release.await(); return List.of(hit("java " + q, "https://example.com/" + q)); }
+                finally { active.decrementAndGet(); }
+            };
+            var engines = List.of(engine("a", blocked), engine("b", blocked), engine("c", blocked));
+            var first = callers.submit(() -> runner.search("java one", engines, 3, 8, Duration.ofSeconds(5)));
+            var second = callers.submit(() -> runner.search("java two", engines, 3, 8, Duration.ofSeconds(5)));
+            ok("two queries can run concurrently", started.await(2, TimeUnit.SECONDS));
+            release.countDown();
+            eq("first query completes all engines", 3, first.get(3, TimeUnit.SECONDS).engines().size());
+            eq("second query completes all engines", 3, second.get(3, TimeUnit.SECONDS).engines().size());
+            eq("queries share the global concurrency ceiling", 2, peak.get());
+        } finally {
+            release.countDown();
+            callers.shutdownNow();
+        }
+
+        try (var runner = new JSearXNG.SearchRunner(4, 8)) {
+            AtomicInteger count = new AtomicInteger();
+            AtomicInteger max = new AtomicInteger();
+            JSearXNG.SearchFn fn = q -> {
+                max.accumulateAndGet(count.incrementAndGet(), Math::max);
+                try { return List.of(hit("java", "https://example.com")); }
+                finally { count.decrementAndGet(); }
+            };
+            runner.search("java", List.of(engine("a", fn), engine("b", fn), engine("c", fn)),
+                    1, 8, Duration.ofSeconds(2));
+            eq("speed one runs engines sequentially", 1, max.get());
+        }
+
+        var caller = Executors.newSingleThreadExecutor();
+        CountDownLatch occupied = new CountDownLatch(1);
+        CountDownLatch unblock = new CountDownLatch(1);
+        AtomicInteger expiredCalls = new AtomicInteger();
+        try (var runner = new JSearXNG.SearchRunner(1, 1)) {
+            var holder = caller.submit(() -> runner.search("java", List.of(engine("holder", q -> {
+                occupied.countDown(); unblock.await(); return List.of();
+            })), 1, 8, Duration.ofSeconds(5)));
+            ok("global worker is occupied", occupied.await(2, TimeUnit.SECONDS));
+            var busy = runner.search("java", List.of(
+                    engine("busy-a", q -> { expiredCalls.incrementAndGet(); return List.of(); }),
+                    engine("busy-b", q -> { expiredCalls.incrementAndGet(); return List.of(); })),
+                    2, 8, Duration.ofSeconds(2));
+            ok("a full queue returns capacity errors for every unfinished engine",
+                    busy.engines().stream().allMatch(o -> "search capacity exhausted".equals(o.error())));
+            eq("rejected search does not execute its queued upstream calls", 0, expiredCalls.get());
+            var expired = runner.search("java", List.of(engine("queued", q -> {
+                expiredCalls.incrementAndGet(); return List.of();
+            })), 1, 8, Duration.ofMillis(100));
+            eq("queue waiting consumes the same deadline", "search deadline exceeded", expired.engines().get(0).error());
+            unblock.countDown();
+            holder.get(2, TimeUnit.SECONDS);
+            runner.search("java", List.of(engine("after", q -> List.of())), 1, 8, Duration.ofSeconds(2));
+            eq("expired queued engine never calls upstream", 0, expiredCalls.get());
+            runner.close();
+            var rejected = runner.search("java", List.of(engine("rejected", q -> List.of())),
+                    1, 8, Duration.ofSeconds(2));
+            eq("rejected work reports capacity with engine identity", "search capacity exhausted", rejected.engines().get(0).error());
+            eq("rejected engine has its original name", "rejected", rejected.engines().get(0).name());
+        } finally {
+            unblock.countDown();
+            caller.shutdownNow();
+        }
+
+        CountDownLatch running = new CountDownLatch(1);
+        CountDownLatch interruptedEngine = new CountDownLatch(1);
+        AtomicBoolean interruptRestored = new AtomicBoolean();
+        try (var runner = new JSearXNG.SearchRunner(1, 8)) {
+            Thread waiting = new Thread(() -> {
+                var cancelled = runner.search("java", List.of(engine("blocked", q -> {
+                    running.countDown();
+                    try { new CountDownLatch(1).await(); }
+                    finally { interruptedEngine.countDown(); }
+                    return List.of();
+                })), 1, 8, Duration.ofSeconds(5));
+                interruptRestored.set(Thread.currentThread().isInterrupted()
+                        && "search cancelled".equals(cancelled.engines().get(0).error()));
+            });
+            waiting.start();
+            try {
+                ok("cancellation test engine is active", running.await(2, TimeUnit.SECONDS));
+                waiting.interrupt();
+                waiting.join(2000);
+                ok("caller interruption returns and restores interrupt status", !waiting.isAlive() && interruptRestored.get());
+                ok("caller cancellation interrupts the engine", interruptedEngine.await(2, TimeUnit.SECONDS));
+            } finally { waiting.interrupt(); }
+        }
     }
 
     static void testUnwrapBing() {

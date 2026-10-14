@@ -8,8 +8,8 @@ instance, supplies a community-maintained engine pool behind one JSON call.
 Same idea the 2002 author had, in a world that fights back, and the 2002 applet
 UI is reborn as the face.
 
-It is the fourth piece of this repository's lineage, and the only one that
-touches the network: [`../Sources/`](../Sources/) and
+It is the fourth piece of this repository's lineage, and the part maintained as
+a live search tool: [`../Sources/`](../Sources/) and
 [`../versions/`](../versions/) hold the artifact,
 [`../modern/`](../modern/) is the design contrast,
 [`../runner/`](../runner/) proves the original still runs, and this is what the
@@ -78,7 +78,11 @@ serving random popular pages instead of the asked-for results. `runSearch`
 runs a relevance sanity-check on every engine's response — if no result
 mentions any query term, the engine's slot shows
 `response failed the relevance check … likely a bot-block page` instead of
-garbage results. Do not trust a scraped engine that returns "success".
+garbage results. The check recognizes Unicode words and overlapping pairs of
+Chinese characters, including mixed Chinese/English queries. A one-character
+Chinese query or short English-only query has too little evidence for rejection.
+This is a keyword heuristic, not a semantic relevance score; synonyms can still
+produce false rejections. Do not trust a scraped engine that returns "success".
 
 ## Honesty rules
 
@@ -89,6 +93,24 @@ garbage results. Do not trust a scraped engine that returns "success".
   dropped.
 - No cache, no tracking, no ads. One request per engine per query — nothing
   auto-retries, nothing hammers.
+
+## Search limits
+
+All queries share eight engine workers and a bounded queue of 64 worker tasks.
+The `speed` control limits parallel engines within one query; it does not create
+another pool. HTTP request handling also uses eight shared threads.
+
+A search has an eight-second overall budget, including time queued for engine
+workers. Individual HTTP requests retain their six-second timeout. When the
+budget expires, completed results are returned and unfinished engines report
+`search deadline exceeded` in the existing UI and JSON. Active calls receive an
+interrupt and queued work is cancelled. If capacity is exhausted, unfinished
+engines report `search capacity exhausted`; caller interruption reports
+`search cancelled`. Cancelled queued tasks are removed before subsequent queries.
+The budget covers engine scheduling and collection, not time waiting for an HTTP
+handler or response delivery. Cancellation relies on engine calls honoring
+interruption, as the JDK HTTP client does; workers remain globally bounded even
+if an added engine ignores it.
 
 ## API
 
@@ -102,14 +124,16 @@ error,ms}], durationMs, duplicatesDropped}`.
 ## Tests
 
 ```sh
-./test.sh     # 117 checks, no network, exit 0 or 1
+./test.sh     # 149 checks, no network, exit 0 or 1
 ```
 
-Every check is on a pure function — the entity layer, query parsing, URL dedup
-keys, the poison check, Bing redirect unwrapping, escaping, the JSON reader,
-the page render — so the suite needs no network, no fixtures and no clock. The
-network half is the live service itself, plus each engine's own error
-reporting in the `>>消息` pane.
+The suite covers entity handling, query parsing, URL dedup keys, relevance,
+Bing redirect unwrapping, escaping, JSON parsing and page rendering. It also
+injects fake engines into `SearchRunner` to verify partial failures, overall
+deadlines, preservation of completed results, cancellation, per-query speed,
+shared concurrency limits and queue saturation. Scheduling checks use latches
+and short time budgets; no public network or local SearXNG is required.
+The real engines' current availability is not tested by this suite.
 
 Several sections exist because a bug of exactly that shape already shipped and
 was found by eye: the repeated-form-key collapse (six `engines=` values

@@ -11,6 +11,16 @@ are archive housekeeping. This repo does not version a live search service.
 ## [Unreleased]
 
 ### Added
+- `jsearxng/`: a reusable, bounded `SearchRunner` with injectable engines,
+  eight shared engine workers, a 64-task queue and an eight-second overall
+  search budget. Completed results survive timeout; unfinished engines retain
+  their names and report deadline, cancellation or capacity errors. Queued work
+  is cancelled and removed; active calls are interrupted. HTTP handlers use
+  eight shared threads. New offline tests cover scheduling and cancellation.
+- `jsearxng/`: Unicode-aware relevance checks with overlapping Chinese
+  character pairs; Chinese and mixed queries no longer silently skip the
+  check. Single Han characters and short English-only queries remain exempt
+  because they supply insufficient evidence.
 - `modern/`: a fourth `WebServer` mode, `live`, that runs the same `Engine`
   records, `SearchService` fan-out and `ResultCollector` dedup against four
   public APIs that need no key — Wikipedia, Stack Exchange, Hacker News, and a
