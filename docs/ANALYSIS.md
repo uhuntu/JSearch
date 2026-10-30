@@ -23,7 +23,7 @@ search thread itself (`SearchThread.validUrl()`). Simpler, no cross-thread
 marker patching — but a blocking connect per result, which is why the ability
 to cancel validating independently no longer existed. Note the **`Validate URL`
 option survives in the UI** (`valurlCh`, default `No`) and is still read at
-`SearchThread.java:79`.
+`Sources/SearchThread.java:90`.
 
 ### Added
 
@@ -172,7 +172,7 @@ encoding.
 
 ANALYSIS.md's "what changed" section notes that ~20 `finalize()` overrides were
 deleted in the 1.2.3 → 2.0 rewrite, each one forcing a full GC. Two remain:
-`JSApplet.java:904` and `SearchThread.java:176`. The `SearchThread` one at least
+`JSApplet.java:901` and `SearchThread.java:252`. The `SearchThread` one at least
 tries to close `inURLStream` — but relying on GC for socket cleanup is
 unreliable; the stream is closed in `run()` on the normal path and only reached
 by `finalize()` if the thread is abandoned mid-search.

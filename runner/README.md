@@ -2,10 +2,11 @@
 
 `modern/` answers "how *should* it have been built?" This directory answers a
 different question: *does the original artifact itself still run?* It does.
-The two classes in `../Sources/` are compiled here byte-for-byte as shipped —
-same logic, same AWT UI, same 4-character sliding-window scraper — and driven
-by a small shim that plays the part Internet Explorer and the Java Plug-in
-used to play.
+The two classes in `../Sources/` are compiled here as archived — same AWT UI,
+same 4-character sliding-window scraper, with only the two documented race
+fixes standing between them and the shipped March 2002 bytes — and driven by a
+small shim that plays the part Internet Explorer and the Java Plug-in used to
+play.
 
 `first-light.png` is the first run's actual output: the original Chinese UI,
 two results scraped from a live HTTP fetch, the URL-duplicated third block

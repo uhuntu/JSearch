@@ -1,7 +1,9 @@
 #!/bin/sh
-# Launch the untouched original JSearch 2.0.0.0 applet (Sources/) in a local
-# frame window. A tiny server on 127.0.0.1:8901 plays the role of a search
-# engine so a live search actually returns results. See README.md.
+# Launch the archived JSearch 2.0.0.0 applet (Sources/) in a local frame window.
+# Sources/ carries two documented race fixes relative to the shipped bytes; the
+# UI and scraper are as authored. A tiny server on 127.0.0.1:8901 plays the
+# role of a search engine so a live search actually returns results.
+# See README.md.
 #
 # Usage: ./run.sh [--go] [--snap=FILE]
 #   --go         auto-run one search for "JSearch" after startup

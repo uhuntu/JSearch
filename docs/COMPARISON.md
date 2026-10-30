@@ -6,10 +6,10 @@ Detailed comparison of the 2002 original and the modern reference design.
 
 | Metric | Original (2002) | Modern Reference |
 |--------|-----------------|------------------|
-| **Files** | 2 (JSApplet.java, SearchThread.java) | 13 |
-| **Total lines** | 906 | ~1,800 (including tests) |
-| **Max class size** | 906 lines (JSApplet) | 175 lines (HtmlBlockScraper) |
-| **Avg class size** | 453 lines | 138 lines |
+| **Files** | 2 (JSApplet.java, SearchThread.java) | 18 (22 with tests) |
+| **Total lines** | 906 | 3,042 main (4,822 with tests) |
+| **Max class size** | 906 lines (JSApplet) | 1,350 lines (WebServer, the demo harness); largest design class 175 |
+| **Avg class size** | 453 lines | 169 lines |
 | **Inner classes** | 15 | 0 |
 | **Static fields** | 20+ | 0 |
 
@@ -48,8 +48,8 @@ SearchResult        - Immutable result
 | **Thread count** | Unbounded | Configurable (default 4) |
 | **Cancellation** | Polled boolean flag | Future.cancel(true) |
 | **Interrupt response** | Between character reads | Immediate (interrupts I/O) |
-| **Locking** | 5 nested synchronized blocks | Single lock in ResultCollector |
-| **Deadlock risk** | High (lock ordering) | None (single lock) |
+| **Locking** | 5 nested synchronized blocks in 2002-01; one static lock after the merged fix | Single lock in ResultCollector |
+| **Deadlock risk** | High in 2002-01 (lock ordering); gone once the shared lock landed | None (single lock) |
 | **Race conditions** | TOCTOU, lost updates | None (atomic check-then-act) |
 
 ## Data Model
@@ -88,7 +88,7 @@ Engine {
 
 | Aspect | Original | Modern |
 |--------|----------|--------|
-| **Tests** | 0 | 35 |
+| **Tests** | 0 | 57 |
 | **Test framework** | None | Custom (dependency-free) |
 | **Fixtures** | None | Archive HTML pages |
 | **Concurrency tests** | None | 8-thread dedup test |
@@ -108,7 +108,7 @@ Engine {
 |--------|----------|--------|
 | **Build tool** | Visual J++ 6.0 only | JDK 11+ (any platform) |
 | **Dependencies** | JDK 1.3 | JDK 11+ |
-| **Build command** | IDE only | 4 options (PS/Bash/Make/Docker) |
+| **Build command** | IDE only | 5 options (PowerShell/Bash/Make/Maven/Docker) |
 | **CI/CD** | None | GitHub Actions |
 
 ## Key Improvements
@@ -180,7 +180,7 @@ List<SearchResult> results = scraper.scrape(engine, html);
 
 | Metric | Original | Modern |
 |--------|----------|--------|
-| **GC pressure** | High (20 finalize() overrides) | Low (no finalize) |
+| **GC pressure** | High (2 `finalize()` overrides left; 23 before the rewrite) | Low (no finalize) |
 | **Thread overhead** | High (1 per engine) | Low (pooled) |
 | **Lock contention** | High (5 nested locks) | Low (1 lock) |
 | **Memory** | 4x duplication | 1x (single source) |
@@ -190,7 +190,7 @@ List<SearchResult> results = scraper.scrape(engine, html);
 | Metric | Original | Modern |
 |--------|----------|--------|
 | **Cyclomatic complexity** | High (nested switches) | Low (single responsibility) |
-| **Cognitive load** | 906 lines in one file | ~140 lines per file |
+| **Cognitive load** | 906 lines in one file | ~170 lines per file |
 | **Change impact** | Global (everything coupled) | Local (component isolated) |
 | **Test feedback** | None | Instant (57 tests) |
 

@@ -31,9 +31,11 @@ design, in Java, against engines that fight back (see
 
 ## Read this first: encoding
 
-**Almost every original file in this repository is encoded in GBK (GB2312),
-not UTF-8.** The Java sources, the engine data files, and the HTML pages all
-carry Chinese comments and labels in legacy encodings.
+**Every original file that contains Chinese text is encoded in GBK (GB2312),
+not UTF-8** — 22 of the 38 originals the encoding guard checks. The other 15
+are pure ASCII, and `ENGINES/lycos_en.html` is ISO-8859-1. The Java sources,
+the engine data files and the Chinese result pages all carry Chinese comments
+and labels in legacy encodings.
 
 Opening them in a modern editor with the wrong encoding setting produces
 mojibake, and — much worse — **saving** them will permanently corrupt them.
@@ -140,11 +142,11 @@ README.md                    this file
 Sources/                     v2.0.0.0 source, Mar 2002, + 2 race fixes  <-- the thing
   JSApplet.java                applet shell, UI, threading (as authored)
   SearchThread.java            the actual worker (+ the two fixes below)
-  JSearch.sln / .sln / .vjp    Visual J++ 6.0 project files
+  JSearch.sln / .suo / .vjp / VJPROJS.SRG   Visual J++ 6.0 project files
   codebase.dat                 applet classpath config (dead path, see below)
 Releases/                    release as shipped, JSearch.cab + JSearch.html + JSEngines.txt
 ENGINES/                     hand-written engine notes + saved HTML snapshots
-docs/                        GB8567-88 documentation set, Jan 2002 (8 .doc + txt/ text copies)
+docs/                        GB8567-88 documentation set, Jan 2002 (8 .doc + `txts/` text copies)
 refs/                        GB8567-88 standard archive, 使用说明书, related material
 artifacts/Classes/           compiled .class output (stale, see caveat below)
 modern/                       compiling reference redesign + tests, incl. a live mode (not the original)
@@ -168,13 +170,16 @@ to.** The `.class` files in each `versions/` snapshot are more trustworthy.
 
 ## Running it
 
-Everything below needs **JDK 11+** ([Adoptium](https://adoptium.net/)).
-Archive-fixture tests skip if `ENGINES/` / `Releases/` are missing.
+The JDK floor differs by target: `modern/` needs **JDK 11+**
+([Adoptium](https://adoptium.net/)); the applet's range is **JDK 11–25**, the
+last release that still carries `java.applet`; `jsearxng/` needs **JDK 16+**
+(records, pattern matching, text blocks). Archive-fixture tests skip if
+`ENGINES/` / `Releases/` are missing.
 
 | What | Command |
 |---|---|
 | Tests (offline) | `cd modern && .\build.ps1 -Test` (PowerShell) or `./build.sh -t` (bash) |
-| Web demo of the URL-key bug | `cd modern && .\build.ps1 -Web` → http://localhost:8081 |
+| Web demo of the URL-key bug | `cd modern && .\build.ps1 -Web` → http://localhost:8080 |
 | Console demo | `cd modern && .\build.ps1` then `java "-Dfile.encoding=UTF-8" -cp out jsearch.Demo` |
 | The untouched 2002 applet | `cd runner && ./run.sh` |
 | The living descendant | `cd jsearxng && java JSearXNG.java` → http://127.0.0.1:8092/ |
@@ -220,9 +225,9 @@ path means the app silently loads zero engines and shows an empty UI.
 Note the author developed on both a `D:` and an `E:` drive at different times,
 so even the mangled path has moved around.
 
-`getEngData()` reads `getParameter("currUrl") + "JSENGINES.TXT"`. That file
-**does not exist in this working tree** — only inside
-`Releases/JSEngines.txt` and the `versions/` snapshots. And
+`getEngData()` reads `getParameter("currUrl") + "JSENGINES.TXT"`. No such file
+sits beside `Sources/`: the shipped data is `Releases/JSEngines.txt`, and
+`runner/JSENGINES.TXT` is a derived UTF-8 copy with two extra records. And
 `Sources/codebase.dat` still points at `file:/D:\DevSofts\JSearch\Classes`.
 
 ---
