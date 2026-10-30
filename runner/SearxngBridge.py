@@ -40,6 +40,7 @@ SEARXNG = os.environ.get("JSEARCH_SEARXNG", "http://127.0.0.1:8888/search?format
 # takes another '&'; a bare base takes the '?' it is missing.
 SEP = "&" if "?" in SEARXNG else "?"
 DEEPSEEK = "https://api.deepseek.com/v1/tools/search"
+DEEPSEEK_FETCH = "https://api.deepseek.com/v1/tools/fetch"
 DEEPSEEK_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 # One billed DeepSeek call serves every level of one search: the API returns
 # a single ranked list (no pagination), so page 00/10/20 are slices of one
@@ -122,6 +123,23 @@ def deepseek_not_configured():
             "the variable exists</p>" % PORT).encode("utf-8")
 
 
+def deepseek_fetch(url):
+    """The Fetch API: one URL in, the page's body out as Markdown. This is
+    what the applet's 工具 menu calls - the runner shows the text in >>预览."""
+    payload = json.dumps({"url": url[:8192]}).encode("utf-8")
+    request = urllib.request.Request(
+        DEEPSEEK_FETCH, data=payload, method="POST",
+        headers={"Authorization": "Bearer " + DEEPSEEK_KEY,
+                 "Content-Type": "application/json", "User-Agent": UA})
+    with urllib.request.urlopen(request, timeout=20) as response:
+        data = json.loads(response.read().decode("utf-8", "replace"))
+    title = str(data.get("title", "")).strip()
+    content = str(data.get("content", "")).strip()[:20000]
+    if not content:
+        return "（DeepSeek 未能从该页面提取出正文）"
+    return ("# " + title + "\n\n" + content) if title else content
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urllib.parse.urlparse(self.path)
@@ -139,7 +157,20 @@ class Handler(BaseHTTPRequestHandler):
             offset = int(params.get("page", ["0"])[0] or 0)
         except ValueError:
             offset = 0
-        if url.path.startswith("/deepseek"):
+        if url.path.startswith("/deepseek/fetch"):
+            label = "DeepSeek fetch"
+            try:
+                target = params.get("url", [""])[0].strip()
+                if not DEEPSEEK_KEY:
+                    body = deepseek_not_configured()
+                elif not target:
+                    body = "（缺少 url 参数）".encode("utf-8")
+                else:
+                    body = deepseek_fetch(target).encode("utf-8")
+            except Exception as exc:
+                body = ("DeepSeek fetch error: %s: %s"
+                        % (type(exc).__name__, exc)).encode("utf-8")
+        elif url.path.startswith("/deepseek"):
             label = "DeepSeek bridge"
             try:
                 body = (deepseek_not_configured() if not DEEPSEEK_KEY

@@ -57,6 +57,19 @@ are archive housekeeping. This repo does not version a live search service.
   page content (`need_content`) and prefers it over the teaser in the
   dialect blocks, capped at 2000 characters: the applet's >>预览 shows the
   article, not a snippet of a snippet.
+- `runner/`: the Windows gaps closed, and the host grows chrome. Double-
+  clicking a result executed the browser command from the applet's own 选项
+  field (`Runtime.exec(webBrowPTf.getText() + " " + url)`), and the runner
+  filled that field with `xdg-open` — right on the Linux server, dead on
+  Windows. The shim now fills it per platform: `rundll32
+  url.dll,FileProtocolHandler` (rundll32 avoids cmd, whose & would eat
+  every query string). A plain AWT menu bar joins the frame — the chrome IE
+  would have drawn: 文件/退出，工具/用系统浏览器打开选中结果，
+  工具/抓取选中结果全文, the last one calling the bridge's new
+  `/deepseek/fetch` route (the Fetch API: one URL in, the page's Markdown
+  out) and landing the text in >>预览. And `start-windows.cmd` is the
+  one-click launcher: wake WSL and hold it open, start the bridge with the
+  registry-stored key, open the applet with DeepSeek selected.
 - `jsearxng/README.md`: the Windows path written down — a portable JDK under
   `%USERPROFILE%\.jdks` for the 16+ floor, the three settings a default WSL
   SearXNG install gets wrong for this use (`json` in `search.formats`,

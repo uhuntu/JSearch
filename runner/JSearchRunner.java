@@ -8,11 +8,20 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.Frame;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 
 /**
@@ -82,7 +91,9 @@ public class JSearchRunner {
             public java.util.Iterator<String> getStreamKeys() { return new java.util.Vector<String>().elements().asIterator(); }
             public void setStream(String key, java.io.InputStream stream) { }
             void open(URL url) {
-                try { new ProcessBuilder("xdg-open", url.toString()).start(); }
+                try {
+                    new ProcessBuilder((browserCommand() + " " + url).split("\\s+")).start();
+                }
                 catch (Exception ex) { System.out.println("[runner] browser open failed: " + url); }
             }
         };
@@ -100,7 +111,7 @@ public class JSearchRunner {
                 if ("valurlCh".equals(name)) return "No";
                 if ("languageCh".equals(name)) return "Chinese";
                 if ("webBrowCh".equals(name)) return "Other browsers";
-                if ("webBrowPTf".equals(name)) return "xdg-open";
+                if ("webBrowPTf".equals(name)) return browserCommand();
                 return null;
             }
             public AppletContext getAppletContext() { return ctx; }
@@ -110,6 +121,7 @@ public class JSearchRunner {
         frame.setLayout(new BorderLayout());
         frame.add(applet, BorderLayout.CENTER);
         frame.setSize(790, 450);
+        frame.setMenuBar(buildMenuBar(applet));
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) { System.exit(0); }
         });
@@ -248,6 +260,119 @@ public class JSearchRunner {
                     applet.previewTe.setText(d.preview);
                     System.out.println("[runner] preview of first result: " + d.preview);
                 }
+            }
+        });
+    }
+
+    /**
+     * The host chrome IE and the Plug-in would have drawn around the applet:
+     * a plain AWT menu bar. 文件/退出 closes; 工具 opens the selected result in
+     * the system browser or Fetches its full text through the bridge into
+     * >>预览. The applet itself stays untouched.
+     */
+    static MenuBar buildMenuBar(final JSApplet applet) {
+        MenuBar bar = new MenuBar();
+        Menu file = new Menu("文件");
+        MenuItem exit = new MenuItem("退出");
+        exit.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) { System.exit(0); }
+        });
+        file.add(exit);
+
+        Menu tools = new Menu("工具");
+        MenuItem open = new MenuItem("用系统浏览器打开选中结果");
+        open.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) { openSelected(applet); }
+        });
+        tools.add(open);
+        MenuItem fetch = new MenuItem("抓取选中结果全文 (Fetch)");
+        fetch.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) { fetchSelected(applet); }
+        });
+        tools.add(fetch);
+
+        bar.add(file);
+        bar.add(tools);
+        return bar;
+    }
+
+    /** The browser command the applet pastes into its 选项 field and executes
+     * with Runtime.exec: tokens split on spaces, the URL appended last. On
+     * Windows rundll32 avoids cmd, whose & would eat every query string. */
+    static String browserCommand() {
+        boolean windows = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("win");
+        return windows ? "rundll32 url.dll,FileProtocolHandler" : "xdg-open";
+    }
+
+    /** The selected result's URL, or null after hinting in >>消息. */
+    static String selectedResultUrl(final JSApplet applet) {
+        int index = JSApplet.resultLi.getSelectedIndex();
+        if (index < 0) {
+            applet.switchPSM(false, false, true);
+            say(applet, "先在结果列表里选中一条结果。");
+            return null;
+        }
+        return (String) JSApplet.resultIndex.elementAt(index);
+    }
+
+    static void openSelected(final JSApplet applet) {
+        String url = selectedResultUrl(applet);
+        if (url == null) return;
+        try {
+            new ProcessBuilder((browserCommand() + " " + url).split("\\s+")).start();
+            say(applet, "已在系统浏览器打开: " + url);
+        } catch (Exception ex) {
+            say(applet, "打开失败: " + ex);
+        }
+    }
+
+    /** Fetches the selected result's full text through the bridge's Fetch
+     * route into >>预览. Off the event thread; the bridge bills per
+     * successful fetch, so this fires only when clicked. */
+    static void fetchSelected(final JSApplet applet) {
+        final String url = selectedResultUrl(applet);
+        if (url == null) return;
+        say(applet, "正在抓取全文: " + url);
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    final String text = fetchText(url);
+                    EventQueue.invokeLater(new Runnable() {
+                        public void run() {
+                            applet.switchPSM(true, false, false);
+                            applet.previewTe.setText(text);
+                            say(applet, "全文已抓取（" + text.length() + " 字符），见 >>预览。");
+                        }
+                    });
+                } catch (final Exception ex) {
+                    EventQueue.invokeLater(new Runnable() {
+                        public void run() { say(applet, "抓取失败: " + ex.getMessage()); }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    static String fetchText(String url) throws Exception {
+        String base = System.getenv("JSEARCH_BRIDGE");
+        if (base == null || base.isEmpty()) base = "http://127.0.0.1:8902";
+        BufferedReader in = new BufferedReader(new InputStreamReader(
+                new URL(base + "/deepseek/fetch?url=" + URLEncoder.encode(url, "UTF-8")).openStream(),
+                StandardCharsets.UTF_8));
+        StringBuilder out = new StringBuilder();
+        char[] buf = new char[4096];
+        int n;
+        while ((n = in.read(buf)) >= 0) out.append(buf, 0, n);
+        in.close();
+        return out.toString();
+    }
+
+    /** Feedback lands in the applet's own >>消息 pane — the same place the
+     * 2002 code reports engine errors. Appends only; the caller picks tabs. */
+    static void say(final JSApplet applet, String text) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                applet.messageTe.append("[runner] " + text + "\n");
             }
         });
     }
