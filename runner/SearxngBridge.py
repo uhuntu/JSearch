@@ -84,7 +84,12 @@ def deepseek_page(query, offset):
     now = time.time()
     cached = DEEPSEEK_CACHE.get(query)
     if not cached or now - cached[0] > 120:
-        payload = json.dumps({"query": query[:128], "count": 30}).encode("utf-8")
+        # need_content: the search response then carries each page's text, so
+        # the applet's >>预览 shows the article instead of the ~100-char
+        # teaser. Same per-request billing; the content is truncated here —
+        # a 2002 parser and a small TextArea deserve a bound.
+        payload = json.dumps({"query": query[:128], "count": 30,
+                              "need_content": True}).encode("utf-8")
         request = urllib.request.Request(
             DEEPSEEK, data=payload, method="POST",
             headers={"Authorization": "Bearer " + DEEPSEEK_KEY,
@@ -99,8 +104,10 @@ def deepseek_page(query, offset):
     for hit in cached[1][offset:offset + 10]:
         href = clean(str(hit.get("url", "")), is_url=True)
         title = clean(str(hit.get("title", ""))) or "(untitled)"
-        preview = clean(str(hit.get("snippet", "")))
-        blocks.append("<p><a ref=%s>%s</a><br>\n%s</p>" % (href, title, preview))
+        # Full text when DeepSeek could extract it, the teaser otherwise.
+        preview = str(hit.get("content", "")) or str(hit.get("snippet", ""))
+        blocks.append("<p><a ref=%s>%s</a><br>\n%s</p>"
+                      % (href, title, clean(preview[:2000])))
     return "\n".join(blocks) + "\n</body></html>"
 
 

@@ -47,6 +47,16 @@ are archive housekeeping. This repo does not version a live search service.
   it, Chinese queries stop depending on upstream engines that wall fresh
   SearXNG instances. The response mapping and the request-string escaper
   are tested offline; the live call costs money and is not exercised by CI.
+- `runner/SearxngBridge.py`: a `/deepseek/` route, so the untouched 2002
+  applet reaches the same index through `--engine=DeepSeek` and a sixth
+  record in `JSENGINES.TXT`. The API has no pagination — one ranked list per
+  query — so one billed call (count=30) is cached per query for two minutes
+  and sliced into the applet's page=00/10/20; without `DEEPSEEK_API_KEY` in
+  the bridge's environment the route serves the bridge's own error block,
+  which the applet shows as the engine's result. The route also asks for
+  page content (`need_content`) and prefers it over the teaser in the
+  dialect blocks, capped at 2000 characters: the applet's >>预览 shows the
+  article, not a snippet of a snippet.
 - `jsearxng/README.md`: the Windows path written down — a portable JDK under
   `%USERPROFILE%\.jdks` for the 16+ floor, the three settings a default WSL
   SearXNG install gets wrong for this use (`json` in `search.formats`,
