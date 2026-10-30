@@ -66,6 +66,23 @@
                             </arguments>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>run-docs-guard</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <classpathScope>test</classpathScope>
+                            <arguments>
+                                <argument>-Dfile.encoding=UTF-8</argument>
+                                <argument>-cp</argument>
+                                <classpath/>
+                                <argument>jsearch.DocsGuard</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>

@@ -96,6 +96,9 @@ if [ "$TEST" = true ]; then
     echo ""
     echo "Running tests..."
     java -Dfile.encoding=UTF-8 -cp "$OUT_DIR" jsearch.Tests
+    echo ""
+    echo "Checking the numbers the documents quote..."
+    java -Dfile.encoding=UTF-8 -cp "$OUT_DIR" jsearch.DocsGuard
 fi
 
 if [ "$BENCHMARK" = true ]; then

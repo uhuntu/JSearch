@@ -10,3 +10,4 @@ out=$(mktemp -d)
 trap 'rm -rf "$out"' EXIT
 javac -encoding UTF-8 -d "$out" $(find src -name '*.java')
 java -Dfile.encoding=UTF-8 -cp "$out" jsearch.Tests
+java -Dfile.encoding=UTF-8 -cp "$out" jsearch.DocsGuard

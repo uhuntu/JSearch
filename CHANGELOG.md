@@ -11,6 +11,16 @@ are archive housekeeping. This repo does not version a live search service.
 ## [Unreleased]
 
 ### Added
+- `modern/src/test/java/jsearch/DocsGuard.java` — the prose equivalent of
+  `EncodingGuard`: 32 checks that recompute every number a document quotes
+  from the tree (file and line counts, largest and average class, both suite
+  sizes, ports, engine counts, the measured rows in `docs/GENERATIONS.md`,
+  the line citations in `docs/ANALYSIS.md`) and fail when the document
+  disagrees. Wired into all five build paths and a new `docs` CI job, so
+  editing code without editing the prose now fails the build. Motivated by an
+  audit that found ten claims which had drifted rather than been wrong when
+  written. `docs/COMPARISON.md` now also says which modern classes are the
+  demo harness rather than the design.
 - `jsearxng/`: a reusable, bounded `SearchRunner` with injectable engines,
   eight shared engine workers, a 64-task queue and an eight-second overall
   search budget. Completed results survive timeout; unfinished engines retain

@@ -55,6 +55,33 @@ jobs:
           javac -encoding UTF-8 -d out $(find src -name '*.java')
           java -Dfile.encoding=UTF-8 -cp out jsearch.EncodingGuard
 
+  # EncodingGuard protects the archive's bytes; this job protects its prose. An
+  # audit of the documentation found ten claims that had been true when written
+  # and had quietly drifted: file counts, line totals, a port number, two
+  # line-number citations. None of that is visible to a compiler, so DocsGuard
+  # recomputes each number from the tree and requires the document quoting it to
+  # match. Editing code without editing the prose now fails here.
+  docs:
+    runs-on: ubuntu-latest
+    env:
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Verify the numbers the documents quote
+        run: |
+          cd modern
+          javac -encoding UTF-8 -d out $(find src -name '*.java')
+          java -Dfile.encoding=UTF-8 -cp out jsearch.DocsGuard
+
   # runner/ is the only path in the repository that executes the original 2002
   # artifact. Nothing else here loads Sources/JSApplet.class — `modern/` is a
   # rewrite, and EncodingGuard only reads the bytes — so this job is the only

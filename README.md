@@ -184,6 +184,7 @@ last release that still carries `java.applet`; `jsearxng/` needs **JDK 16+**
 | The untouched 2002 applet | `cd runner && ./run.sh` |
 | The living descendant | `cd jsearxng && java JSearXNG.java` → http://127.0.0.1:8092/ |
 | Encoding audit | `.\scripts\verify-gbk.ps1` (Windows), or `java -Dfile.encoding=UTF-8 -cp out jsearch.EncodingGuard` after building `modern/` |
+| Documentation claims | `java -Dfile.encoding=UTF-8 -cp out jsearch.DocsGuard` after building `modern/` — recomputes every number the docs quote |
 
 `modern/` is a **design study, not a starter kit** — its demo server replays the
 2002 URL-key collision against archive fixtures. Do not deploy it or treat it as

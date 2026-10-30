@@ -10,6 +10,9 @@ if not exist out (
 
 echo Running tests...
 java -Dsun.jnu.encoding=UTF-8 -Dfile.encoding=UTF-8 -cp out jsearch.Tests
+if errorlevel 1 exit /b %errorlevel%
+echo Checking the numbers the documents quote...
+java -Dsun.jnu.encoding=UTF-8 -Dfile.encoding=UTF-8 -cp out jsearch.DocsGuard
 exit /b %errorlevel%
 
 :error

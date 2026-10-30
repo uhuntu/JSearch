@@ -38,7 +38,12 @@ Write-Host "Compilation successful."
 if ($Test) {
     Write-Host "`nRunning tests..."
     & java "-Dsun.jnu.encoding=UTF-8" "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.Tests
-    exit $LASTEXITCODE
+    $testExit = $LASTEXITCODE
+    Write-Host "`nChecking the numbers the documents quote..."
+    & java "-Dsun.jnu.encoding=UTF-8" "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.DocsGuard
+    $docsExit = $LASTEXITCODE
+    if ($testExit -ne 0) { exit $testExit }
+    exit $docsExit
 }
 
 if ($Benchmark) {

@@ -104,6 +104,17 @@ found by strict decoding rather than by looking at it. Run it on its own with
 `java -cp out jsearch.EncodingGuard` for the full per-file list, including any
 file that no expectation covers yet.
 
+The same job is done for the prose by `DocsGuard`, which runs as part of every
+test target and on its own as `java -cp out jsearch.DocsGuard`. An audit of the
+documentation found ten claims that had drifted rather than been wrong when
+written — a port number, the size of this tree, two line-number citations — so
+the guard recomputes each quoted number from the tree and requires the document
+to match: the code-structure table in `../docs/COMPARISON.md`, the measured rows
+in `../docs/GENERATIONS.md`, the line citations in `../docs/ANALYSIS.md`, both
+suite sizes, the ports, and the descendant's constants. Change a class and the
+documents have to change with it, or the build fails. It is a separate runner
+from `Tests` on purpose: a suite cannot count itself.
+
 Writing them found three real bugs:
 
 - `ResultCollector` had an error listener field and `fireError()` but no way to

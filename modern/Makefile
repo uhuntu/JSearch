@@ -19,6 +19,9 @@ test: build
 	@echo ""
 	@echo "Running tests..."
 	java -Dfile.encoding=UTF-8 -cp $(OUT_DIR) jsearch.Tests
+	@echo ""
+	@echo "Checking the numbers the documents quote..."
+	java -Dfile.encoding=UTF-8 -cp $(OUT_DIR) jsearch.DocsGuard
 
 benchmark: build
 	@echo ""

@@ -8,3 +8,5 @@ $sources = Get-ChildItem -Path (Join-Path $root 'src') -Recurse -Filter '*.java'
 javac -encoding UTF-8 -d $out $sources
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 java '-Dsun.jnu.encoding=UTF-8' '-Dfile.encoding=UTF-8' -cp $out jsearch.Tests
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+java '-Dsun.jnu.encoding=UTF-8' '-Dfile.encoding=UTF-8' -cp $out jsearch.DocsGuard
