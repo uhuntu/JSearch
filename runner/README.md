@@ -299,38 +299,52 @@ needs on its own origin — the classes, the engine table, the loader page,
 and the CheerpJ runtime itself:
 
 ```sh
+./build-cheerpj.sh      # Java 8 bytecode + engine table into cheerpj-app/
 ./start-windows.cmd     # or: python3 SearxngBridge.py &, then open the page
 # http://127.0.0.1:8902/app/
 ```
 
-The page initializes the runtime and runs `JSearchRunner` from
-`JSearch2002.jar`; the 2002 UI appears as an AWT window inside the tab,
-menu bar included, with searches going through the same-origin bridge to
-DeepSeek. `first-light-browser.png` is that first run — a live DeepSeek
-search in progress, Chinese rendering perfectly. The applet is back where
-the 2002 author meant it to be: a web page, this time hosted by a WASM JVM
-instead of IE.
+The page is the 2002 embed page modernized: a `<cheerpj-applet>` element
+carrying the same `<param>` lines `JSearch.html` fed the Java Plug-in,
+served next to the classes it names. The applet gets its stub from
+CheerpJ, its engine table from the same-origin bridge, and its searches
+go out through the bridge to DeepSeek — the applet is back where its
+author meant it to be: a web page, this time hosted by a WASM JVM instead
+of IE. `first-light-browser.png` is the first verified render, captured
+from the live browser session; the run's bridge log carries the proof —
+the applet fetched `JSENGINES.TXT` (init ran) and the page reported the
+applet's rendered DOM (`__rendered__`).
 
-Three things this taught, for whoever redoes it:
+Five things this taught, for whoever redoes it:
 
+- **Compile for Java 8.** CheerpJ 4.3 ships a Java 8 runtime, so classes
+  built by the JDK 11 desktop build are rejected with
+  `UnsupportedClassVersionError` and the applet's main never runs —
+  silence, with no error visible anywhere. `build-cheerpj.sh` compiles the
+  untouched sources with `javac --release 8`.
 - **The static handler must answer HTTP Range requests with 206.** CheerpJ
   loads the JRE jars (`rt.jar` alone is 27MB) with ranges and refuses to
   start without them: *"HTTP server does not support the 'Range' header.
   CheerpJ cannot run."* The `.js` MIME type matters too — dynamic
   `import()` rejects modules served as anything but `text/javascript`.
-- **The runtime is self-hosted, not linked from the CDN.** This machine's
-  browser does not use the proxy that reaches `cjrtnc.leaningtech.com`, so
-  a CDN `<script src>` never loads. The bridge pulls each runtime file
-  through its own proxy environment on first request and caches it under
+- **Self-host the runtime, don't link the CDN.** This machine's browser
+  does not use the proxy that reaches `cjrtnc.leaningtech.com`, so a CDN
+  `<script src>` never loads. The bridge pulls each runtime file through
+  its own proxy environment on first request and caches it under
   `cheerpj-app/cheerpj/4.3/` — after one visit the page is fully offline.
-- **The classpath argument of `cheerpjRunMain` never fetches anything here**
-  (relative and absolute both silently no-op); the jar route —
-  `cheerpjRunJar("JSearch2002.jar")`, built by `jar cfe … -C classes .` —
-  is the one that works.
+  The provisioner rejects empty CDN bodies (the flaky proxy returns 0-byte
+  responses that would otherwise poison the cache with empty fonts) and
+  Windows-illegal names (the JVM's `lib/ext/*` glob).
+- **`cheerpjRunMain`/`cheerpjRunJar` run nothing here.** The classpath
+  argument never fetches a class; the jar is fetched but its main never
+  executes. The `<cheerpj-applet>` element is the route that works.
+- **Fonts 404 harmlessly.** The JVM's font files fail to provision through
+  the flaky proxy and CheerpJ remaps the missing ones (`Font remapping for
+  Lucida Sans Regular`); the applet renders regardless.
 
-`cheerpj-app/` is generated (class copies, engine table, jar, runtime
-cache) and gitignored apart from the authored `index.html`;
-`start-windows.cmd` refreshes the jar when it is missing.
+`cheerpj-app/` is generated (Java 8 classes, engine table, runtime cache)
+and gitignored apart from the authored `index.html`;
+`start-windows.cmd` refreshes it through `build-cheerpj.sh`.
 
 ## Honest scope
 

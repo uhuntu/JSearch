@@ -15,12 +15,13 @@ start "searxng-keepalive" /min wsl -d Ubuntu -e sleep infinity
 
 cd /d "%~dp0"
 
-rem The browser bundle: classes (built by run.sh) packed into a jar the
-rem page's cheerpjRunJar loads. Rebuilt only when missing.
-set "JAR=%ProgramFiles%\Java\jdk-11\bin\jar.exe"
-if exist classes\JSearchRunner.class if not exist cheerpj-app\JSearch2002.jar (
-    "%JAR%" --create --file cheerpj-app\JSearch2002.jar --main-class JSearchRunner -C classes .
-)
+rem The browser bundle: the untouched sources compiled to Java 8 bytecode
+rem (CheerpJ 4.3 ships a Java 8 runtime) plus the engine table. Fast, and
+rem keeps cheerpj-app/ honest after any Sources change.
+set "BASH=%ProgramFiles%\Git\bin\bash.exe"
+if not exist "%BASH%" set "BASH=C:\Program Files\Git\bin\bash.exe"
+if not exist "%BASH%" set "BASH=bash"
+"%BASH%" -c "cd '%~dp0' && ./build-cheerpj.sh"
 
 rem The bridge serves the page, the classes, the engine table, the jar and
 rem (self-hosted) the CheerpJ runtime on 127.0.0.1:8902. python, not the

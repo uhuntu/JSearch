@@ -77,21 +77,27 @@ are archive housekeeping. This repo does not version a live search service.
   links.
 - `runner/`: the applet runs **inside a modern browser** via CheerpJ (JVM
   compiled to WebAssembly), with the bridge as the page's same-origin
-  backend. `/app/` serves the classes, the engine table, the loader page
-  and the runtime; `cheerpjRunJar("JSearch2002.jar")` starts
-  `JSearchRunner` and the 2002 UI appears as an AWT window in the tab —
-  menu bar, live DeepSeek searches, Chinese rendering, all of it.
-  `first-light-browser.png` is that first run. Three lessons encoded in
-  `SearxngBridge.py`: the static handler must answer HTTP **Range**
-  requests with 206 (CheerpJ loads the 27MB `rt.jar` with ranges and
-  refuses to start otherwise), `.js` must be served as
-  `text/javascript` (dynamic `import()` rejects any other MIME type), and
-  the runtime is **self-hosted** — the bridge pulls each file through the
-  machine's proxy on first request and caches it, because this browser
-  does not use that proxy and a CDN `<script src>` never loads.
-  `start-windows.cmd` now opens the browser page instead of the desktop
-  frame; `cheerpj-app/` is generated and gitignored apart from the
-  authored `index.html`.
+  backend. The page is the 2002 embed page modernized: a
+  `<cheerpj-applet>` element carrying the same `<param>` lines
+  `JSearch.html` fed the Java Plug-in, served next to the classes it
+  names; the applet gets its stub from CheerpJ and its engine table and
+  searches from the same-origin bridge. `first-light-browser.png` is the
+  first verified render, captured from the live session — the run's
+  bridge log carries the proof: the applet fetched `JSENGINES.TXT` (init
+  ran) and the page reported the applet's rendered DOM. Five lessons
+  encoded in `SearxngBridge.py` and `build-cheerpj.sh`: compile the
+  untouched sources with `javac --release 8` (CheerpJ 4.3 ships a Java 8
+  runtime and silently refuses newer class versions), answer HTTP
+  **Range** requests with 206 (the 27MB `rt.jar` is loaded with ranges),
+  serve `.js` as `text/javascript` (dynamic `import()` rejects any other
+  MIME type), self-host the runtime (the browser here cannot reach the
+  CDN; the bridge provisions and caches each file, rejecting empty
+  bodies and Windows-illegal names), and use the `<cheerpj-applet>`
+  element — `cheerpjRunMain`/`cheerpjRunJar` fetch nothing or run
+  nothing. `start-windows.cmd` now opens the browser page instead of the
+  desktop frame and refreshes the bundle through `build-cheerpj.sh`;
+  `cheerpj-app/` is generated and gitignored apart from the authored
+  `index.html`.
 - `runner/`: the host learns to host the ancestor. `versions/2000-08/`
   (v1.2.3) ships compiled 45.0 bytecode that modern JVMs still load, and
   its `JSApplet` carries an abandoned 2000 attempt at the hybrid

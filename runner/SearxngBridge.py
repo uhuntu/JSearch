@@ -266,6 +266,13 @@ class Handler(BaseHTTPRequestHandler):
         else:
             if not os.path.isfile(target) and rel.startswith("cheerpj/"):
                 self.provision_runtime(rel, target)
+            elif (os.path.isfile(target) and os.path.getsize(target) == 0
+                  and rel.startswith("cheerpj/")):
+                # A zero-byte file is a poisoned cache entry from an earlier
+                # flaky fetch; drop it and try again rather than serving empty
+                # fonts and scripts forever.
+                os.remove(target)
+                self.provision_runtime(rel, target)
             if os.path.isfile(target):
                 code = 200
                 ext = target.rsplit(".", 1)[-1].lower()
@@ -340,6 +347,11 @@ class Handler(BaseHTTPRequestHandler):
         """Best-effort CDN fetch for one missing CheerpJ runtime file, cached
         next to loader.js so the browser never has to leave this machine
         again. Only callable for paths under cheerpj/."""
+        # Windows-invalid names (the JVM's lib/ext/* glob) can never be
+        # cached; answer fast instead of failing five times on a '*' filename.
+        if any(ch in rel for ch in '*:?"<>|'):
+            print("[searxng-bridge] runtime path not cacheable here: %s" % rel, flush=True)
+            return
         source = "https://cjrtnc.leaningtech.com/4.3/" + rel[len("cheerpj/4.3/"):]
         os.makedirs(os.path.dirname(target), exist_ok=True)
         for attempt in range(5):
@@ -347,6 +359,14 @@ class Handler(BaseHTTPRequestHandler):
                 request = urllib.request.Request(source, headers={"User-Agent": UA})
                 with urllib.request.urlopen(request, timeout=60) as response:
                     data = response.read()
+                if len(data) < 64:
+                    # An empty or stub body is the flaky proxy talking, not the
+                    # runtime file; caching it would poison every later request
+                    # with an empty font/JS payload.
+                    print("[searxng-bridge] runtime fetch for %s returned %d bytes; retrying"
+                          % (rel, len(data)), flush=True)
+                    time.sleep(2)
+                    continue
                 tmp = target + ".part"
                 open(tmp, "wb").write(data)
                 os.replace(tmp, target)
