@@ -129,13 +129,13 @@ The applet's window never closes, so the run is capped and `timeout`'s exit
 
 What the assertions protect, and why each is worth a line:
 
-- **5 of 5 engine records load.** The URL-key collision this archive's analysis
+- **6 of 6 engine records load.** The URL-key collision this archive's analysis
   used to report never actually happened, because record 1's key carries a
   trailing space. Trim it and this is the assertion that fails.
-- **4 engines listed in the Chinese category, and English Google not among
+- **5 engines listed in the Chinese category, and English Google not among
   them.** The two Google records are in different categories, so the Chinese
   list never held both. This one exists because the prose repeatedly said it
-  did. `SearXNG`, the fifth record, is listed too.
+  did. `SearXNG` and `DeepSeek`, the fifth and sixth records, are listed too.
 - **`LocalDemo` is the selected engine** — the deterministic setup found the
   only engine that can still answer.
 - **2 results from 3 scraped blocks** — the original 4-character sliding-window
@@ -176,7 +176,7 @@ label as a box — the run still passes, it just is not proving much.
 | File | Role |
 |---|---|
 | `JSearchRunner.java` | The IE/Plug-in substitute: `AppletStub` + `AppletContext`, the applet parameters (`currUrl`, `_readTxt`, options), a plain `Frame` window. Also the `--engine`/`--levels` flags that make an unattended run deterministic |
-| `JSENGINES.TXT` | The shipped `Releases/JSEngines.txt` converted to UTF-8, with two records appended: `LocalDemo` (the demo server) and `SearXNG` (the bridge) |
+| `JSENGINES.TXT` | The shipped `Releases/JSEngines.txt` converted to UTF-8, with three records appended: `LocalDemo` (the demo server), `SearXNG` (the bridge) and `DeepSeek` (the keyed api.deepseek.com search) |
 | `DemoServer.py` | A canned results page written to the 2002 scraper's marker format (`<p><` block start, `ref=` URL, `</a>` title, `</p>` block end); third block duplicates the first URL so dedup is visible |
 | `SearxngBridge.py` | Opt-in translator: SearXNG's JSON API in, 2002-dialect result pages out, so the untouched scraper can read the live web. Started by `run-searxng.sh` |
 | `StubSearxng.py` | A fixture SearXNG: the same JSON shape, page-aware, so `verify.sh --live`/`--combined` exercise the bridge with no network |
@@ -234,9 +234,9 @@ the environment, not changes to the applet:
 **The shipped data never actually lost an engine.** `docs/ANALYSIS.md`
 originally reported that the URL-keyed `Hashtable` in `getEngData()` silently
 collapsed Chinese Google into English Google — three records in, two engines
-out. Running the code proves otherwise: all five records load as five engines.
-They also come back as four in the Chinese category (`GB_Chinese Google`,
-`Baidu`, `LocalDemo`, `SearXNG`), because the two Google records are in
+out. Running the code proves otherwise: all six records load as six engines.
+They also come back as five in the Chinese category (`GB_Chinese Google`,
+`Baidu`, `LocalDemo`, `SearXNG`, `DeepSeek`), because the two Google records are in
 different categories — `GB_Chinese Google` is Chinese, plain `Google` is
 English — so the Chinese list never held both in the first place.
 The reason the keys stayed distinct is a

@@ -20,10 +20,16 @@ Environment:
                      http://127.0.0.1:8888/search?format=json. Point it at a
                      fixture such as StubSearxng.py to exercise this bridge
                      without a live SearXNG or the network.
+    DEEPSEEK_API_KEY enables the /deepseek/ routes (api.deepseek.com's
+                     official Search API, the first keyed upstream). Without
+                     the variable those routes serve a bridge-error block
+                     saying so, and the applet shows it as the engine's
+                     result - the same honesty the historical engines had.
 """
 import json
 import os
 import sys
+import time
 import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -33,6 +39,12 @@ SEARXNG = os.environ.get("JSEARCH_SEARXNG", "http://127.0.0.1:8888/search?format
 # A base that already carries a query string (the default does: format=json)
 # takes another '&'; a bare base takes the '?' it is missing.
 SEP = "&" if "?" in SEARXNG else "?"
+DEEPSEEK = "https://api.deepseek.com/v1/tools/search"
+DEEPSEEK_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
+# One billed DeepSeek call serves every level of one search: the API returns
+# a single ranked list (no pagination), so page 00/10/20 are slices of one
+# fetch kept here for two minutes.
+DEEPSEEK_CACHE = {}
 UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126.0 Safari/537.36")
 
@@ -68,9 +80,45 @@ def page_for(query, pageno):
     return "\n".join(blocks) + "\n</body></html>"
 
 
+def deepseek_page(query, offset):
+    now = time.time()
+    cached = DEEPSEEK_CACHE.get(query)
+    if not cached or now - cached[0] > 120:
+        payload = json.dumps({"query": query[:128], "count": 30}).encode("utf-8")
+        request = urllib.request.Request(
+            DEEPSEEK, data=payload, method="POST",
+            headers={"Authorization": "Bearer " + DEEPSEEK_KEY,
+                     "Content-Type": "application/json", "User-Agent": UA})
+        with urllib.request.urlopen(request, timeout=8) as response:
+            data = json.loads(response.read().decode("utf-8", "replace"))
+        cached = (now, data.get("results", []))
+        if len(DEEPSEEK_CACHE) > 16:
+            DEEPSEEK_CACHE.clear()
+        DEEPSEEK_CACHE[query] = cached
+    blocks = []
+    for hit in cached[1][offset:offset + 10]:
+        href = clean(str(hit.get("url", "")), is_url=True)
+        title = clean(str(hit.get("title", ""))) or "(untitled)"
+        preview = clean(str(hit.get("snippet", "")))
+        blocks.append("<p><a ref=%s>%s</a><br>\n%s</p>" % (href, title, preview))
+    return "\n".join(blocks) + "\n</body></html>"
+
+
+def error_block(label, exc):
+    return ("<p><a ref=http://127.0.0.1:%d/bridge-error>%s error: %s</a><br>\n%s</p>"
+            % (PORT, label, clean(type(exc).__name__), clean(str(exc))))
+
+
+def deepseek_not_configured():
+    return ("<p><a ref=http://127.0.0.1:%d/bridge-error>DeepSeek bridge: "
+            "DEEPSEEK_API_KEY not set</a><br>\nthe keyed engine stays off until "
+            "the variable exists</p>" % PORT).encode("utf-8")
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        url = urllib.parse.urlparse(self.path)
+        params = urllib.parse.parse_qs(url.query)
         query = params.get("q", [""])[0].strip()
         # The 2002 templates carry the level in the tens digit: the shipped
         # records are Google's `start=`0` and Baidu's `pn=`0`, both 0-based
@@ -78,17 +126,25 @@ class Handler(BaseHTTPRequestHandler):
         # 20 for levels 0, 1, 2 — one page of ten results per level. SearXNG
         # numbers its pages from one, so the offset has to be divided back out.
         # Handing SearXNG the raw value instead asks it for page 11 when level
-        # 1 meant page 2, which returns nothing and says nothing.
+        # 1 meant page 2, which returns nothing and says nothing. DeepSeek has
+        # no pages at all, so its offset slices the one cached ranked list.
         try:
             offset = int(params.get("page", ["0"])[0] or 0)
         except ValueError:
             offset = 0
-        pageno = offset // 10 + 1
-        try:
-            body = page_for(query, pageno).encode("utf-8")
-        except Exception as exc:
-            body = ("<p><a ref=http://127.0.0.1:%d/bridge-error>SearXNG bridge error: %s</a><br>\n%s</p>"
-                    % (PORT, clean(type(exc).__name__), clean(str(exc)))).encode("utf-8")
+        if url.path.startswith("/deepseek"):
+            label = "DeepSeek bridge"
+            try:
+                body = (deepseek_not_configured() if not DEEPSEEK_KEY
+                        else deepseek_page(query, offset).encode("utf-8"))
+            except Exception as exc:
+                body = error_block(label, exc).encode("utf-8")
+        else:
+            label = "SearXNG bridge"
+            try:
+                body = page_for(query, offset // 10 + 1).encode("utf-8")
+            except Exception as exc:
+                body = error_block(label, exc).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))

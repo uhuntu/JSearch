@@ -11,7 +11,10 @@
 # simply fails like the historical engines do — selecting it shows the
 # original's own error handling.
 #
-# Usage: ./run-searxng.sh [--go] [--snap=FILE]
+# Usage: ./run-searxng.sh [--go] [--snap=FILE] [--engine=DeepSeek]
+#   --engine=DeepSeek selects only the keyed engine; DEEPSEEK_API_KEY must be
+#   in the environment for it to answer, and without it the engine's result
+#   list shows the bridge's own error block. The default stays LocalDemo.
 set -e
 cd "$(dirname "$0")"
 

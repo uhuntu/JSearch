@@ -126,6 +126,14 @@ start_fixture() {
     STUB_PORT=$(free_port)
     BRIDGE_PORT=$(free_port)
     WORK=$(mktemp -d)
+    # The applet is a native Windows JVM when this runs under Git Bash, and a
+    # POSIX path inside a file: URL ("file:/tmp/...") is meaningless to it —
+    # getEngData's openStream fails and the engine table loads zero records.
+    # cygpath -m yields the mixed form (C:/...) that both worlds read.
+    case "$(uname -s)" in
+        CYGWIN*|MINGW*|MSYS*) WORK_URL=$(cygpath -m "$WORK") ;;
+        *) WORK_URL="$WORK" ;;
+    esac
 
     # The SearXNG record is the only thing that has to change: it must name
     # this run's bridge instead of 8902. Both occurrences — the Hashtable key
@@ -178,26 +186,28 @@ check_trail() {
     # The applet booted and built its UI, rather than dying in init().
     expect "[runner] engines in table" "the applet started and built the engine table"
 
-    # The claim docs/ANALYSIS.md makes about the URL-keyed Hashtable: all five
-    # records load as five engines. Record 1's key carries a trailing space, so the
+    # The claim docs/ANALYSIS.md makes about the URL-keyed Hashtable: all six
+    # records load as six engines. Record 1's key carries a trailing space, so the
     # two Google keys stayed distinct and nothing was dropped. If someone trims
     # that space, this is the assertion that notices.
-    expect "[runner] engines in table = 5" "all 5 engine records loaded (no URL-key collision)"
+    expect "[runner] engines in table = 6" "all 6 engine records loaded (no URL-key collision)"
 
-    # The engine file defines 5 records in 2 categories: GB_Chinese Google, Baidu,
-    # LocalDemo and SearXNG are Chinese, plain Google is English. Selecting the
-    # Chinese category therefore lists 4 of the 5 — and in particular NOT English
-    # Google. This is the fact the prose kept getting wrong ("the Chinese category
-    # lists both Google entries" — it never did; the two Googles sit in different
-    # categories, which is a second, independent reason no collision was visible).
-    count_is '^\[runner\] engine\[[0-9]\+\] = ' 4 "the Chinese category lists 4 of the 5 engines"
+    # The engine file defines 6 records in 2 categories: GB_Chinese Google, Baidu,
+    # LocalDemo, SearXNG and DeepSeek are Chinese, plain Google is English.
+    # Selecting the Chinese category therefore lists 5 of the 6 — and in
+    # particular NOT English Google. This is the fact the prose kept getting
+    # wrong ("the Chinese category lists both Google entries" — it never did;
+    # the two Googles sit in different categories, which is a second,
+    # independent reason no collision was visible).
+    count_is '^\[runner\] engine\[[0-9]\+\] = ' 5 "the Chinese category lists 5 of the 6 engines"
     refute "= Google / Google" "English Google is absent from the Chinese category"
 
-    # The fifth record is the SearXNG one. In check mode the bridge behind it is
-    # opt-in and CI does not run it, so this asserts the record parses and lands
-    # in the Chinese category — not that the bridge answers. --live and
-    # --combined assert the answering part.
+    # The fifth record is the SearXNG one, the sixth the DeepSeek one. In check
+    # mode the bridges behind them are opt-in and CI runs neither, so this
+    # asserts the records parse and land in the Chinese category — not that the
+    # bridges answer. --live and --combined assert the answering part.
     expect "= SearXNG / live web aggregation" "the SearXNG record loads as a Chinese engine"
+    expect "= DeepSeek / " "the DeepSeek record loads as a Chinese engine"
 
     # The runner's deterministic setup found and selected the only engine that can
     # still answer out of the box: the local demo server.
@@ -264,11 +274,11 @@ else
     # The applet's window never closes, so cap the run; 124 is the expected
     # exit. Without a DISPLAY, run under xvfb the way the CI job does.
     if [ -n "$DISPLAY" ]; then
-        timeout 90 ./run.sh "file:$WORK/" --go --engine="$SPEC" --levels=2 \
+        timeout 90 ./run.sh "file:$WORK_URL/" --go --engine="$SPEC" --levels=2 \
             > "$LOG" 2>&1
     elif command -v xvfb-run >/dev/null 2>&1; then
         xvfb-run -a --server-args="-screen 0 1024x768x24" \
-            timeout 90 ./run.sh "file:$WORK/" --go --engine="$SPEC" --levels=2 \
+            timeout 90 ./run.sh "file:$WORK_URL/" --go --engine="$SPEC" --levels=2 \
             > "$LOG" 2>&1
     else
         echo "FAIL  the applet needs a display, and there is neither a DISPLAY"

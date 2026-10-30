@@ -90,10 +90,11 @@ are archive housekeeping. This repo does not version a live search service.
   redesign, not the original.
 - A `runner` CI job, so that claim is checked on every push instead of resting
   on one screenshot. It runs the untouched applet headless under `xvfb` with
-  `run.sh --go`, then asserts the evidence trail the runner prints: 5 of 5
+  `run.sh --go`, then asserts the evidence trail the runner prints: 6 of 6
   engine records loaded (the URL-key collision that the old analysis reported
-  never actually happened), 4 of 5 listed in the Chinese category with English
-  Google absent and the `SearXNG` record present, the demo engine selected,
+  never actually happened), 5 of 6 listed in the Chinese category with English
+  Google absent and the `SearXNG` and `DeepSeek` records present, the demo
+  engine selected,
   2 results out of 3 scraped blocks (the original dedup working), and a
   preview read back out of the applet's own result table.
   `runner/verify.sh` holds the assertions and can be pointed at any log, so
@@ -227,8 +228,9 @@ are archive housekeeping. This repo does not version a live search service.
   both Google entries"; it never did. `GB_Chinese Google` is Chinese and plain
   `Google` is English, so the two records land in different categories — which
   the table ten lines above the claim in `docs/ANALYSIS.md` already showed.
-  Selecting Chinese lists 2 of the 3 shipped engines (4 of 5 once `LocalDemo`
-  and the `SearXNG` record are appended), verified against the applet's own
+  Selecting Chinese lists 2 of the 3 shipped engines (5 of 6 once `LocalDemo`,
+  the `SearXNG` record and the `DeepSeek` record are appended), verified
+  against the applet's own
   output. `FAQ.md` still
   carried the original, disproven "silently dropped due to URL key collision",
   even though the entry above lists the files that had been corrected.

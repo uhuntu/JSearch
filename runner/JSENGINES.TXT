@@ -32,3 +32,11 @@ Chinese
 http://127.0.0.1:8902/search?q=^&page=`0
 <p><
 </p>
+
+http://127.0.0.1:8902/deepseek/
+DeepSeek / 官方搜索（需 Key）
+Chinese
+http://127.0.0.1:8902/deepseek/search?q=^&page=`0
+<p><
+</p>
+

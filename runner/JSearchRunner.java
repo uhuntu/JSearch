@@ -137,7 +137,7 @@ public class JSearchRunner {
                 applet.containingTf.requestFocus();
 
                 System.out.println("[runner] engines in table = " + applet.engDataTable.size()
-                        + " (the file defines 5 and all 5 load: record 1's URL key has a"
+                        + " (the file defines 6 and all 6 load: record 1's URL key has a"
                         + " trailing space, which accidentally keeps the URL-keyed table from colliding)");
                 for (int i = 0; i < applet.searchEnginesLi.getItemCount(); i++) {
                     System.out.println("[runner] engine[" + i + "] = " + applet.searchEnginesLi.getItem(i)
