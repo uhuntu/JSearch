@@ -199,6 +199,39 @@ Troubleshooting:
 
 ---
 
+## Verification limits
+
+A green build does not mean every historical claim has been replayed. The
+checks fall into three confidence levels:
+
+| Level | Meaning | Examples |
+|---|---|---|
+| **Recomputed** | CI derives the value from the current tree and fails if the prose drifts | `EncodingGuard`, `DocsGuard` |
+| **Executed offline** | A script actually runs code against local fixtures | the `modern` suite; the 12 `runner/verify.sh` assertions under `xvfb`; `jsearxng/test.sh` with no network |
+| **Documented only** | A historical conclusion that cannot be replayed in this checkout | the items below |
+
+What is **not** currently reproduced here:
+
+- **The exact build history of `artifacts/Classes/`.** It is a mixed
+  incremental build: 5 of 24 `.class` files match `versions/2000-08/`, but
+  the remaining 19 cannot be attributed to a source revision without the
+  original Visual J++ 6.0 toolchain. That statement is a byte comparison,
+  not a compiler reproduction.
+- **Live engine availability and anti-bot behavior.** `jsearxng/test.sh` and
+  the fixture modes in `runner/verify.sh` deliberately use no network.
+  Whether a public engine answers today — and what markup it returns — is
+  outside the CI gate. The optional SearXNG bridge depends on a local service
+  and current upstream pages.
+- **The applet in its original browser environment.** The 2002 Internet
+  Explorer / ActiveX deployment cannot be replayed. `runner/` proves that the
+  applet logic still runs under a modern JDK and shim, not that the historical
+  deployment still works.
+- **The Visual J++ project as a build system.** The `.vjp` and `.sln` files
+  are preserved as artifacts; there is no supported path that regenerates the
+  shipped `.cab` from them.
+
+---
+
 ## Analysis
 
 The code-level findings live in [ANALYSIS.md](docs/ANALYSIS.md):
