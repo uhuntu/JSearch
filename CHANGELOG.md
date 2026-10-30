@@ -69,7 +69,12 @@ are archive housekeeping. This repo does not version a live search service.
   `/deepseek/fetch` route (the Fetch API: one URL in, the page's Markdown
   out) and landing the text in >>预览. And `start-windows.cmd` is the
   one-click launcher: wake WSL and hold it open, start the bridge with the
-  registry-stored key, open the applet with DeepSeek selected.
+  registry-stored key, open the applet with DeepSeek selected. The 工具
+  menu also carries AI 问答 — the bridge's `/deepseek/ask` route runs the
+  FreeAskInternet pipeline (search DeepSeek's index with content, hand the
+  pages to `deepseek-flash`, get a cited Chinese answer) against the
+  query box's text, so the 2002 UI now answers questions, not just lists
+  links.
 - `jsearxng/README.md`: the Windows path written down — a portable JDK under
   `%USERPROFILE%\.jdks` for the 16+ floor, the three settings a default WSL
   SearXNG install gets wrong for this use (`json` in `search.formats`,

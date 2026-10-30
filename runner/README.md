@@ -175,10 +175,10 @@ label as a box — the run still passes, it just is not proving much.
 
 | File | Role |
 |---|---|
-| `JSearchRunner.java` | The IE/Plug-in substitute: `AppletStub` + `AppletContext`, the applet parameters (`currUrl`, `_readTxt`, options), a plain `Frame` window with a small menu bar (文件/退出，工具/用系统浏览器打开选中结果，工具/抓取选中结果全文 — the last one Fetches the selected URL through the bridge into >>预览). Also the `--engine`/`--levels` flags that make an unattended run deterministic |
+| `JSearchRunner.java` | The IE/Plug-in substitute: `AppletStub` + `AppletContext`, the applet parameters (`currUrl`, `_readTxt`, options), a plain `Frame` window with a small menu bar (文件/退出，工具/用系统浏览器打开选中结果，工具/抓取选中结果全文，工具/AI 问答 — the last one asks the bridge to search DeepSeek's index and let deepseek-flash synthesize a cited answer into >>预览). Also the `--engine`/`--levels` flags that make an unattended run deterministic |
 | `JSENGINES.TXT` | The shipped `Releases/JSEngines.txt` converted to UTF-8, with three records appended: `LocalDemo` (the demo server), `SearXNG` (the bridge) and `DeepSeek` (the keyed api.deepseek.com search) |
 | `DemoServer.py` | A canned results page written to the 2002 scraper's marker format (`<p><` block start, `ref=` URL, `</a>` title, `</p>` block end); third block duplicates the first URL so dedup is visible |
-| `SearxngBridge.py` | Opt-in translator: SearXNG's JSON API in, 2002-dialect result pages out, so the untouched scraper can read the live web. Started by `run-searxng.sh`. Also serves `/deepseek/fetch?url=` for the runner's menu — the DeepSeek Fetch API, one URL in, Markdown out |
+| `SearxngBridge.py` | Opt-in translator: SearXNG's JSON API in, 2002-dialect result pages out, so the untouched scraper can read the live web. Started by `run-searxng.sh`. Also serves `/deepseek/search` + `/deepseek/fetch` + `/deepseek/ask` for the runner's menu — search, Fetch (one URL in, Markdown out) and ask (RAG: search results in, a cited `deepseek-flash` answer out) |
 | `StubSearxng.py` | A fixture SearXNG: the same JSON shape, page-aware, so `verify.sh --live`/`--combined` exercise the bridge with no network |
 | `start-windows.cmd` | The one-click Windows launcher: wakes the WSL SearXNG and holds it open, starts the bridge (reading `DEEPSEEK_API_KEY` from the registry, set once with `setx`), opens the applet with DeepSeek selected. Make a desktop shortcut to it |
 | `run-searxng.sh` | Starts the bridge if it is not listening, then launches the applet exactly as `run.sh` does |

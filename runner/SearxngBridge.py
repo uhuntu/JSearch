@@ -41,6 +41,8 @@ SEARXNG = os.environ.get("JSEARCH_SEARXNG", "http://127.0.0.1:8888/search?format
 SEP = "&" if "?" in SEARXNG else "?"
 DEEPSEEK = "https://api.deepseek.com/v1/tools/search"
 DEEPSEEK_FETCH = "https://api.deepseek.com/v1/tools/fetch"
+DEEPSEEK_CHAT = "https://api.deepseek.com/chat/completions"
+DEEPSEEK_MODEL = os.environ.get("JSEARCH_DEEPSEEK_MODEL", "deepseek-flash")
 DEEPSEEK_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 # One billed DeepSeek call serves every level of one search: the API returns
 # a single ranked list (no pagination), so page 00/10/20 are slices of one
@@ -81,6 +83,17 @@ def page_for(query, pageno):
     return "\n".join(blocks) + "\n</body></html>"
 
 
+def deepseek_search_results(query):
+    payload = json.dumps({"query": query[:128], "count": 30,
+                          "need_content": True}).encode("utf-8")
+    request = urllib.request.Request(
+        DEEPSEEK, data=payload, method="POST",
+        headers={"Authorization": "Bearer " + DEEPSEEK_KEY,
+                 "Content-Type": "application/json", "User-Agent": UA})
+    with urllib.request.urlopen(request, timeout=8) as response:
+        return json.loads(response.read().decode("utf-8", "replace")).get("results", [])
+
+
 def deepseek_page(query, offset):
     now = time.time()
     cached = DEEPSEEK_CACHE.get(query)
@@ -89,15 +102,7 @@ def deepseek_page(query, offset):
         # the applet's >>预览 shows the article instead of the ~100-char
         # teaser. Same per-request billing; the content is truncated here —
         # a 2002 parser and a small TextArea deserve a bound.
-        payload = json.dumps({"query": query[:128], "count": 30,
-                              "need_content": True}).encode("utf-8")
-        request = urllib.request.Request(
-            DEEPSEEK, data=payload, method="POST",
-            headers={"Authorization": "Bearer " + DEEPSEEK_KEY,
-                     "Content-Type": "application/json", "User-Agent": UA})
-        with urllib.request.urlopen(request, timeout=8) as response:
-            data = json.loads(response.read().decode("utf-8", "replace"))
-        cached = (now, data.get("results", []))
+        cached = (now, deepseek_search_results(query))
         if len(DEEPSEEK_CACHE) > 16:
             DEEPSEEK_CACHE.clear()
         DEEPSEEK_CACHE[query] = cached
@@ -121,6 +126,45 @@ def deepseek_not_configured():
     return ("<p><a ref=http://127.0.0.1:%d/bridge-error>DeepSeek bridge: "
             "DEEPSEEK_API_KEY not set</a><br>\nthe keyed engine stays off until "
             "the variable exists</p>" % PORT).encode("utf-8")
+
+
+def deepseek_ask(query):
+    """The FreeAskInternet idea, minus the Docker: search DeepSeek's index
+    (content included), hand the pages to deepseek-flash, return the
+    synthesized answer with numbered sources. Reuses the search cache, so
+    asking about a query the applet just searched bills only the chat call."""
+    now = time.time()
+    cached = DEEPSEEK_CACHE.get(query)
+    if not cached or now - cached[0] > 120:
+        cached = (now, deepseek_search_results(query))
+        if len(DEEPSEEK_CACHE) > 16:
+            DEEPSEEK_CACHE.clear()
+        DEEPSEEK_CACHE[query] = cached
+    refs = []
+    for i, hit in enumerate(cached[1][:8], 1):
+        body = (str(hit.get("content", "")).strip()
+                or str(hit.get("snippet", "")).strip())[:1200]
+        refs.append("[%d] %s\n%s\n%s" % (i, str(hit.get("title", "")),
+                                         str(hit.get("url", "")), body))
+    prompt = ("问题：" + query + "\n\n以下是编号的搜索结果，回答时用 [编号] 标注来源：\n\n"
+              + "\n\n".join(refs))
+    payload = json.dumps({
+        "model": DEEPSEEK_MODEL,
+        "messages": [
+            {"role": "system",
+             "content": "你是搜索问答助手。仅依据给出的搜索结果用中文回答，"
+                        "关键句末尾用 [编号] 标注来源，回答末尾列出"
+                        "“来源：[编号] 标题 URL”。若结果不足以回答，直接说明。"},
+            {"role": "user", "content": prompt},
+        ],
+    }).encode("utf-8")
+    request = urllib.request.Request(
+        DEEPSEEK_CHAT, data=payload, method="POST",
+        headers={"Authorization": "Bearer " + DEEPSEEK_KEY,
+                 "Content-Type": "application/json", "User-Agent": UA})
+    with urllib.request.urlopen(request, timeout=90) as response:
+        data = json.loads(response.read().decode("utf-8", "replace"))
+    return data["choices"][0]["message"]["content"]
 
 
 def deepseek_fetch(url):
@@ -169,6 +213,18 @@ class Handler(BaseHTTPRequestHandler):
                     body = deepseek_fetch(target).encode("utf-8")
             except Exception as exc:
                 body = ("DeepSeek fetch error: %s: %s"
+                        % (type(exc).__name__, exc)).encode("utf-8")
+        elif url.path.startswith("/deepseek/ask"):
+            label = "DeepSeek ask"
+            try:
+                if not DEEPSEEK_KEY:
+                    body = "DeepSeek ask：DEEPSEEK_API_KEY not set".encode("utf-8")
+                elif not query:
+                    body = "（缺少 q 参数）".encode("utf-8")
+                else:
+                    body = deepseek_ask(query).encode("utf-8")
+            except Exception as exc:
+                body = ("DeepSeek ask error: %s: %s"
                         % (type(exc).__name__, exc)).encode("utf-8")
         elif url.path.startswith("/deepseek"):
             label = "DeepSeek bridge"

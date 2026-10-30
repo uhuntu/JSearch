@@ -290,6 +290,11 @@ public class JSearchRunner {
             public void actionPerformed(ActionEvent e) { fetchSelected(applet); }
         });
         tools.add(fetch);
+        MenuItem ask = new MenuItem("AI 问答（搜索并总结查询内容）");
+        ask.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) { askAI(applet); }
+        });
+        tools.add(ask);
 
         bar.add(file);
         bar.add(tools);
@@ -353,18 +358,54 @@ public class JSearchRunner {
         }).start();
     }
 
-    static String fetchText(String url) throws Exception {
+    /** AI 问答 — the FreeAskInternet idea in one menu item: the query box's
+     * text goes to the bridge's /deepseek/ask route, which searches
+     * DeepSeek's index, hands the pages to deepseek-flash and returns the
+     * synthesized answer. Lands in >>预览; progress in >>消息. */
+    static void askAI(final JSApplet applet) {
+        final String query = applet.containingTf.getText().trim();
+        if (query.isEmpty()) {
+            applet.switchPSM(false, false, true);
+            say(applet, "先在查询内容里输入问题，再用本菜单。");
+            return;
+        }
+        say(applet, "正在让 DeepSeek 搜索并总结（可能需要十几秒）…");
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    final String text = fetchPath("/deepseek/ask?q="
+                            + URLEncoder.encode(query, "UTF-8"));
+                    EventQueue.invokeLater(new Runnable() {
+                        public void run() {
+                            applet.switchPSM(true, false, false);
+                            applet.previewTe.setText(text);
+                            say(applet, "AI 回答已生成（" + text.length() + " 字符），见 >>预览。");
+                        }
+                    });
+                } catch (final Exception ex) {
+                    EventQueue.invokeLater(new Runnable() {
+                        public void run() { say(applet, "AI 问答失败: " + ex.getMessage()); }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    static String fetchPath(String path) throws Exception {
         String base = System.getenv("JSEARCH_BRIDGE");
         if (base == null || base.isEmpty()) base = "http://127.0.0.1:8902";
         BufferedReader in = new BufferedReader(new InputStreamReader(
-                new URL(base + "/deepseek/fetch?url=" + URLEncoder.encode(url, "UTF-8")).openStream(),
-                StandardCharsets.UTF_8));
+                new URL(base + path).openStream(), StandardCharsets.UTF_8));
         StringBuilder out = new StringBuilder();
         char[] buf = new char[4096];
         int n;
         while ((n = in.read(buf)) >= 0) out.append(buf, 0, n);
         in.close();
         return out.toString();
+    }
+
+    static String fetchText(String url) throws Exception {
+        return fetchPath("/deepseek/fetch?url=" + URLEncoder.encode(url, "UTF-8"));
     }
 
     /** Feedback lands in the applet's own >>消息 pane — the same place the
