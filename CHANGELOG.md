@@ -39,6 +39,11 @@ are archive housekeeping. This repo does not version a live search service.
   bot-wall accusation that was really an English-only index answering a
   Chinese query, and showed why bing must keep its own. Engines now carry
   that fact (`EngineEntry.chinese`) instead of the message guessing it.
+- `jsearxng/README.md`: the Windows path written down — a portable JDK under
+  `%USERPROFILE%\.jdks` for the 16+ floor, the three settings a default WSL
+  SearXNG install gets wrong for this use (`json` in `search.formats`,
+  limiter off, an HTTP socket on the uwsgi ini), and the loopback keep-alive
+  a stopped WSL distro needs before 127.0.0.1:8888 answers from Windows.
 - `modern/`: a fourth `WebServer` mode, `live`, that runs the same `Engine`
   records, `SearchService` fan-out and `ResultCollector` dedup against four
   public APIs that need no key — Wikipedia, Stack Exchange, Hacker News, and a

@@ -51,6 +51,40 @@ next start dies on the occupied port and flaps in `activating
 (auto-restart)`, while the hand-started process gets none of what the unit
 provides — no boot start, no journal, no restart on failure.
 
+## On Windows
+
+The app itself needs nothing Windows-specific — except a JDK whose floor is
+16, which the box this archive is developed on did not have (system JDK 11).
+A portable Temurin unzipped under `%USERPROFILE%\.jdks\` — no installer, no
+PATH change — runs it and passes the offline suite unchanged (153 checks):
+
+```powershell
+%USERPROFILE%\.jdks\jdk-21.0.13+9\bin\java.exe JSearXNG.java --port 8092
+```
+
+The local SearXNG half lives in WSL2 (Ubuntu 24.04, systemd on): the official
+`utils/searxng.sh install all` into `/usr/local/searxng`, then three settings
+the default install gets wrong for this use —
+
+- `search.formats` gains `json`: the default instance answers `format=json`,
+  the one call JSearXNG makes, with 403;
+- `limiter: false`: a private loopback instance has nobody to throttle, and
+  the limiter wants valkey, which the installer does not provision;
+- the uwsgi app ini gains `http-socket = 127.0.0.1:8888`: the generated ini
+  speaks only a unix socket for nginx, so without it nothing listens on TCP
+  and every call is a refused connection.
+
+(The script's `safe_search: 2` also went to 0 — the strict setting silently
+guts results.)
+
+WSL2 forwards 127.0.0.1:8888 to Windows, but the reverse is not true:
+JSearXNG's calls cannot wake a stopped distro, and WSL stops an idle one. A
+logon keep-alive — `wsl -d Ubuntu -e sleep infinity` in the Startup folder —
+holds it open; without it the searxng engine reports `ConnectException` after
+idle until something touches WSL. Verified end to end from this box: an
+English query answers from all five reachable engines including searxng's 8,
+deduplicated across the layers.
+
 ## Engines
 
 | Engine | How | Notes |
