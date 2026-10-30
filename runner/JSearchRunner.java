@@ -149,8 +149,11 @@ public class JSearchRunner {
                 applet.containingTf.requestFocus();
 
                 System.out.println("[runner] engines in table = " + applet.engDataTable.size()
-                        + " (the file defines 6 and all 6 load: record 1's URL key has a"
-                        + " trailing space, which accidentally keeps the URL-keyed table from colliding)");
+                        + (isLegacyGeneration()
+                           ? " (a 2000-generation engine file — the shipped one, unchanged)"
+                           : " (the file defines 6 and all 6 load: record 1's URL key has a"
+                             + " trailing space, which accidentally keeps the URL-keyed table"
+                             + " from colliding)"));
                 for (int i = 0; i < applet.searchEnginesLi.getItemCount(); i++) {
                     System.out.println("[runner] engine[" + i + "] = " + applet.searchEnginesLi.getItem(i)
                             + (applet.searchEnginesLi.isIndexSelected(i) ? "  [selected]" : ""));
@@ -198,35 +201,61 @@ public class JSearchRunner {
         });
     }
 
+    /** True when the loaded JSApplet predates the 2002 completion signal:
+     * the 2000/2001 generations have no static _stop for the watcher to wait
+     * on (and no switchPSM to switch tabs with), so completion falls back to
+     * the result count holding still, and preview switching degrades to a
+     * no-op. Probed once, lazily - the answer depends on which generation's
+     * JSApplet the classpath put first. */
+    static Boolean legacyGeneration;
+
+    static boolean isLegacyGeneration() {
+        if (legacyGeneration == null) {
+            try {
+                JSApplet.class.getDeclaredField("_stop");
+                legacyGeneration = Boolean.FALSE;
+            } catch (NoSuchFieldException noStopField) {
+                legacyGeneration = Boolean.TRUE;
+            }
+        }
+        return legacyGeneration.booleanValue();
+    }
+
     /** Prints the outcome and shows the first result's preview when it lands. */
     static void watchForResults(final JSApplet applet) {
         new Thread(new Runnable() {
             public void run() {
-                // Wait for the applet's own completion signal rather than for
-                // the result count to hold still. SearchThread sets _stop when
-                // the last engine's thread exits, and every showResult() has
-                // already run by then, so the count reported below is final.
-                // A count that merely stopped changing for 600ms is not: the
-                // scraper pauses between blocks and between levels, so the
-                // earlier check reported mid-scrape — 2 of 5 results, with the
-                // level loop still to come.
-                for (int i = 0; i < 100; i++) {
+                boolean stable = false;
+                int last = -1;
+                int stablePolls = 0;
+                // The 2002 search is done inside 30s and says so via _stop.
+                // The 2000/2001 generations say nothing, and their four-page
+                // level loop over a live engine runs longer than that, so the
+                // watcher gets 90s and relies on the 3-second stability rule.
+                int polls = isLegacyGeneration() ? 300 : 100;
+                for (int i = 0; i < polls; i++) {
                     try { Thread.sleep(300); } catch (InterruptedException e) { return; }
-                    if (!JSApplet._stop) continue;
+                    // The 2002 code sets _stop when the last engine's thread
+                    // exits, and every showResult() has already run by then,
+                    // so the count reported below is final. A count that
+                    // merely stopped changing for 600ms is not: the scraper
+                    // pauses between blocks and between levels, so the
+                    // earlier check reported mid-scrape — 2 of 5 results,
+                    // with the level loop still to come. The 2000/2001
+                    // generations have no _stop; there the count holding
+                    // still is the only completion signal there is, and it
+                    // has to hold for 3 seconds — the v1.2.3 applet's level
+                    // loop pauses for seconds between pages while DeepSeek
+                    // is fetched, and 600ms of quiet is exactly what one of
+                    // those pauses looks like.
+                    if (!isLegacyGeneration() && !JSApplet._stop) continue;
                     int now = JSApplet.resultLi.getItemCount();
-                    if (now > 0) {
+                    if (now > 0 && now == last) stablePolls++; else stablePolls = 0;
+                    if (now > 0 && stablePolls >= (isLegacyGeneration() ? 10 : 0)) {
                         report(applet, now);
-                    } else {
-                        // The search finished and found nothing. Say so with
-                        // the count, so a failing engine is visible as data
-                        // rather than as a missing line.
-                        System.out.println("[runner] results in list = 0"
-                                + " (the search finished; no engine returned a block the scraper could read)");
-                        for (int j = 0; j < JSApplet.statusLi.getItemCount(); j++) {
-                            System.out.println("[runner] status[" + j + "] = " + JSApplet.statusLi.getItem(j));
-                        }
+                        return;
                     }
-                    return;
+                    last = now;
                 }
                 System.out.println("[runner] no results after 30s");
             }
@@ -256,10 +285,24 @@ public class JSearchRunner {
                 String url0 = (String) JSApplet.resultIndex.elementAt(0);
                 ResultsDetails d = (ResultsDetails) JSApplet.resultTable.get(url0);
                 if (d != null) {
-                    applet.switchPSM(true, false, false);
-                    applet.previewTe.setText(d.preview);
+                    showPreview(applet, d.preview);
                     System.out.println("[runner] preview of first result: " + d.preview);
                 }
+            }
+        });
+    }
+
+    /** setText first, then best-effort tab switch: the 2002 applet hides
+     * >>预览 behind the tab strip and needs switchPSM to reveal it, but the
+     * 2000/2001 layouts have no such method - NoSuchMethodError there is
+     * harmless (those screens show everything at once), and it must not eat
+     * the setText that precedes it. */
+    static void showPreview(final JSApplet applet, final String text) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                applet.previewTe.setText(text);
+                try { applet.switchPSM(true, false, false); }
+                catch (NoSuchMethodError legacyLayout) { }
             }
         });
     }
@@ -309,11 +352,22 @@ public class JSearchRunner {
         return windows ? "rundll32 url.dll,FileProtocolHandler" : "xdg-open";
     }
 
+    /** Best-effort switch to the >>消息 tab; harmless no-op on the 2000/2001
+     * layouts (see showPreview). */
+    static void showMessages(final JSApplet applet) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                try { applet.switchPSM(false, false, true); }
+                catch (NoSuchMethodError legacyLayout) { }
+            }
+        });
+    }
+
     /** The selected result's URL, or null after hinting in >>消息. */
     static String selectedResultUrl(final JSApplet applet) {
         int index = JSApplet.resultLi.getSelectedIndex();
         if (index < 0) {
-            applet.switchPSM(false, false, true);
+            showMessages(applet);
             say(applet, "先在结果列表里选中一条结果。");
             return null;
         }
@@ -344,8 +398,7 @@ public class JSearchRunner {
                     final String text = fetchText(url);
                     EventQueue.invokeLater(new Runnable() {
                         public void run() {
-                            applet.switchPSM(true, false, false);
-                            applet.previewTe.setText(text);
+                            showPreview(applet, text);
                             say(applet, "全文已抓取（" + text.length() + " 字符），见 >>预览。");
                         }
                     });
@@ -365,7 +418,7 @@ public class JSearchRunner {
     static void askAI(final JSApplet applet) {
         final String query = applet.containingTf.getText().trim();
         if (query.isEmpty()) {
-            applet.switchPSM(false, false, true);
+            showMessages(applet);
             say(applet, "先在查询内容里输入问题，再用本菜单。");
             return;
         }
@@ -377,8 +430,7 @@ public class JSearchRunner {
                             + URLEncoder.encode(query, "UTF-8"));
                     EventQueue.invokeLater(new Runnable() {
                         public void run() {
-                            applet.switchPSM(true, false, false);
-                            applet.previewTe.setText(text);
+                            showPreview(applet, text);
                             say(applet, "AI 回答已生成（" + text.length() + " 字符），见 >>预览。");
                         }
                     });

@@ -75,6 +75,21 @@ are archive housekeeping. This repo does not version a live search service.
   pages to `deepseek-flash`, get a cited Chinese answer) against the
   query box's text, so the 2002 UI now answers questions, not just lists
   links.
+- `runner/`: the host learns to host the ancestor. `versions/2000-08/`
+  (v1.2.3) ships compiled 45.0 bytecode that modern JVMs still load, and
+  its `JSApplet` carries an abandoned 2000 attempt at the hybrid
+  applet/application idiom — a `main()` that builds the Frame but never
+  calls `setStub()`, dead on every JVM ever made (reproduced). The shim
+  now probes its generation (no `_stop`, no `switchPSM`) and degrades:
+  completion by a 3-second count stability, preview switching a no-op,
+  the watcher budget 90s — the v1.2.3 level loop runs four pages per
+  engine over a live engine and outran the old 30s watcher. Hosted from a
+  fresh clone of `uhuntu/JSApplet` with a UTF-8-converted engine file plus
+  the DeepSeek record, `--engine=DeepSeek --go` answered **30 results** in
+  the 2000 UI — whose engine table is a time capsule of the 2000 Chinese
+  web (华好网景、网易 yeah!、搜狐、找到啦、中文Excite、新浪网、梦想家、
+  雅虎中国、搜索客), with the author's email in the Frame title
+  (`hunt_lin@990.net`, then `huntlin@public.xm.fj.cn`).
 - `jsearxng/README.md`: the Windows path written down — a portable JDK under
   `%USERPROFILE%\.jdks` for the 16+ floor, the three settings a default WSL
   SearXNG install gets wrong for this use (`json` in `search.formats`,

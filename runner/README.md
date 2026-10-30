@@ -247,6 +247,50 @@ a trailing space*, so the two keys never collided. The design defect is real
 re-encode away from silent data loss — but the shipped file dodged it.
 Analysis corrected accordingly; see `../docs/ANALYSIS.md`.
 
+## Hosting the ancestors
+
+The same shim can host the 2000 ancestor (`versions/2000-08/`, v1.2.3), not
+just the 2002 final release — because that snapshot ships **compiled**: 45.0
+bytecode (Java 1.1), which every modern JVM still loads. Its `JSApplet` even
+has a `main()` — a 2000 attempt at the hybrid applet/application idiom,
+abandoned incomplete (it never calls `setStub()`, so `java JSApplet` dies at
+the first `getParameter()` on every JVM ever made; reproduced). The runner is
+the stub that main forgot.
+
+```sh
+mkdir /tmp/v123work
+iconv -f GBK -t UTF-8 ~/work/JSApplet/JSENGINES.TXT > /tmp/v123work/JSENGINES.TXT
+printf '\nhttp://127.0.0.1:8902/deepseek/\nDeepSeek / official search (keyed)\nChinese\nhttp://127.0.0.1:8902/deepseek/search?q=^&page=`0\n<p><\n</p>\n\n' >> /tmp/v123work/JSENGINES.TXT
+java -cp "C:/Users/huntl/work/JSApplet;C:/Users/huntl/work/JSearch/runner/classes" \
+  -Dfile.encoding=UTF-8 -Dsun.awt.fontconfig=fontconfig.properties \
+  JSearchRunner "file:/tmp/v123work/" --engine=DeepSeek --go
+```
+
+What made it work, beyond the stub:
+
+- **Generation probe.** v1.2.3 has no static `_stop` (the 2002 completion
+  signal) and no `switchPSM` (the tab reveal). The shim probes once: legacy
+  generations get completion-by-stability (the count holding still for 3
+  seconds — 600ms was exactly what one page pause looks like, and the first
+  run reported 1 of 30 results mid-scrape) and preview switching degrades to
+  a no-op. setText always precedes the switch, so the text lands either way.
+- **The engine file is GBK** and the bridge serves UTF-8, so the temp copy is
+  converted (`iconv`), then the DeepSeek record appended — one file, one
+  charset, `--engine=DeepSeek` matches the ASCII prefix.
+- **The engine table is a time capsule**: twelve engines from the 2000
+  Chinese web — 华好网景、网易 yeah!、搜狐、找到啦、中文Excite、新浪网、
+  梦想家、雅虎中国、搜索客 — most long dead, all still listed. And
+  v1.2.3's own level loop runs *four* pages per engine by default (the 2002
+  release set three), which is why the legacy watcher gets a 90-second
+  budget: `page=30` of a 30-result index comes back empty, and the search
+  outruns a 30-second watcher.
+
+The author's email sat in the Frame title: `JSearch 1.2.3
+[hunt_lin@990.net]`, moving to `[huntlin@public.xm.fj.cn]` by 2001-12. The
+2002 release dropped `main()` entirely — the hybrid attempt abandoned, the
+stub contract left unfilled, until a runner twenty-four years later filled
+it.
+
 ## Honest scope
 
 The applet UI, threading, scraping and dedup are the original 2002 code, and
