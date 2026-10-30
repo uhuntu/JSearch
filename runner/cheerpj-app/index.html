@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>JSearch 2.0.0.0 · 浏览器中的 2002 Applet</title>
+<script src="cheerpj/4.3/loader.js"></script>
+<style>
+  body { margin:0; padding:16px; background:#3a6ea5; color:#fff;
+         font:14px/1.6 Tahoma, Verdana, sans-serif; }
+  h3 { margin:0 0 8px; }
+  #status { background:#7fffff; color:#000; border:2px solid #0b2545;
+            padding:8px 12px; max-width:720px; }
+  code { color:#ffe; }
+</style>
+</head>
+<body>
+<h3>JSearch 2.0.0.0 — 运行在 2026 年的浏览器里</h3>
+<div id="status">正在初始化 CheerpJ WebAssembly JVM（首次运行会自托管缓存全部运行时文件）…</div>
+<p>加载完成后，2002 年的 Applet 会以 AWT 浮层窗口的形式出现在本页 ——
+菜单栏、搜索、AI 问答全部可用；它调用的桥就在本页同一端口上（同源），全程离线自持。</p>
+<script>
+const statusBox = document.getElementById("status");
+async function run() {
+  try {
+    statusBox.textContent = "1/3 cheerpjInit…";
+    await cheerpjInit({ status: "cdn" });
+    statusBox.textContent = "2/3 cheerpjRunJar(JSearch2002.jar)…";
+    await cheerpjRunJar("JSearch2002.jar");
+    statusBox.textContent = "3/3 RunJar 已返回 —— AWT 窗口应以浮层出现；若无，请开浏览器控制台 (F12) 查看输出";
+  } catch (e) {
+    statusBox.textContent = "启动失败: " + (e && e.message ? e.message : e);
+  }
+}
+run();
+</script>
+</body>
+</html>

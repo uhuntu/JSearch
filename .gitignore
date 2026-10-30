@@ -35,3 +35,9 @@ jsearxng/out/
 # WorkBuddy session data (agent memory and scratch state; per-machine,
 # not part of the archive)
 .workbuddy/
+
+# runner/ browser bundle (generated: class copies, jar, engine-table copy,
+# self-hosted CheerpJ runtime cache). index.html is the authored page and
+# stays tracked.
+runner/cheerpj-app/*
+!runner/cheerpj-app/index.html

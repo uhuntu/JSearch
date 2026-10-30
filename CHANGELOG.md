@@ -75,6 +75,23 @@ are archive housekeeping. This repo does not version a live search service.
   pages to `deepseek-flash`, get a cited Chinese answer) against the
   query box's text, so the 2002 UI now answers questions, not just lists
   links.
+- `runner/`: the applet runs **inside a modern browser** via CheerpJ (JVM
+  compiled to WebAssembly), with the bridge as the page's same-origin
+  backend. `/app/` serves the classes, the engine table, the loader page
+  and the runtime; `cheerpjRunJar("JSearch2002.jar")` starts
+  `JSearchRunner` and the 2002 UI appears as an AWT window in the tab —
+  menu bar, live DeepSeek searches, Chinese rendering, all of it.
+  `first-light-browser.png` is that first run. Three lessons encoded in
+  `SearxngBridge.py`: the static handler must answer HTTP **Range**
+  requests with 206 (CheerpJ loads the 27MB `rt.jar` with ranges and
+  refuses to start otherwise), `.js` must be served as
+  `text/javascript` (dynamic `import()` rejects any other MIME type), and
+  the runtime is **self-hosted** — the bridge pulls each file through the
+  machine's proxy on first request and caches it, because this browser
+  does not use that proxy and a CDN `<script src>` never loads.
+  `start-windows.cmd` now opens the browser page instead of the desktop
+  frame; `cheerpj-app/` is generated and gitignored apart from the
+  authored `index.html`.
 - `runner/`: the host learns to host the ancestor. `versions/2000-08/`
   (v1.2.3) ships compiled 45.0 bytecode that modern JVMs still load, and
   its `JSApplet` carries an abandoned 2000 attempt at the hybrid

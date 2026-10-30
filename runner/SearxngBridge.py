@@ -189,6 +189,8 @@ class Handler(BaseHTTPRequestHandler):
         url = urllib.parse.urlparse(self.path)
         params = urllib.parse.parse_qs(url.query)
         query = params.get("q", [""])[0].strip()
+        if url.path.startswith("/app/"):
+            return self.serve_app_file(url.path)
         # The 2002 templates carry the level in the tens digit: the shipped
         # records are Google's `start=`0` and Baidu's `pn=`0`, both 0-based
         # result offsets counting by ten. So the applet asks for page=00, 10,
@@ -241,9 +243,120 @@ class Handler(BaseHTTPRequestHandler):
                 body = error_block(label, exc).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def serve_app_file(self, path):
+        """Static files for the CheerpJ browser host: the compiled 2002
+        classes, JSENGINES.TXT and the loader page, all same-origin with the
+        bridge so the in-browser applet needs no CORS waivers of its own.
+        The runner derives currUrl from its own class location, which here is
+        /app/ - so /app/JSENGINES.TXT is exactly what getEngData fetches.
+        Runtime files under cheerpj/4.3/ that are not on disk yet are pulled
+        from the official CDN on first request and cached - after the first
+        visit the page is fully offline."""
+        root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cheerpj-app")
+        rel = path[len("/app/"):] or "index.html"
+        target = os.path.normpath(os.path.join(root, rel))
+        if not target.startswith(root):
+            body = b"forbidden"
+            code, ctype = 403, "text/plain"
+        else:
+            if not os.path.isfile(target) and rel.startswith("cheerpj/"):
+                self.provision_runtime(rel, target)
+            if os.path.isfile(target):
+                code = 200
+                ext = target.rsplit(".", 1)[-1].lower()
+                # js/mjs must be text/javascript: dynamic import() refuses modules
+                # served with any other MIME type.
+                ctype = {"html": "text/html", "txt": "text/plain",
+                         "js": "text/javascript", "mjs": "text/javascript",
+                         "json": "application/json",
+                         "class": "application/octet-stream"}.get(ext, "application/octet-stream")
+                if ctype.startswith("text/") and "octet" not in ctype:
+                    ctype += "; charset=utf-8"
+                # CheerpJ loads the JRE jars with HTTP Range requests and
+                # refuses to run without them: "HTTP server does not support
+                # the 'Range' header. CheerpJ cannot run." So the static
+                # handler must answer 206 for every byte range it is asked.
+                span = self.parse_range(self.headers.get("Range"), os.path.getsize(target))
+                if span:
+                    start, end = span
+                    with open(target, "rb") as f:
+                        f.seek(start)
+                        body = f.read(end - start + 1)
+                    self.send_response(206)
+                    self.send_header("Content-Range", "bytes %d-%d/%d"
+                                     % (start, end, os.path.getsize(target)))
+                else:
+                    body = open(target, "rb").read()
+                    self.send_response(code)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Accept-Ranges", "bytes")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            else:
+                body = ("not found: " + rel).encode("utf-8", "replace")
+                code, ctype = 404, "text/plain"
+        self.send_response(code)
+        if ctype.startswith("text/") and "octet" not in ctype:
+            ctype += "; charset=utf-8"
+        self.send_header("Content-Type", ctype)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    @staticmethod
+    def parse_range(header, size):
+        """'bytes=start-end' / 'bytes=start-' / 'bytes=-suffix' -> (start, end)
+        inclusive, clamped to the file; None when absent or unsatisfiable."""
+        if not header or not header.startswith("bytes="):
+            return None
+        spec = header[6:].split(",")[0].strip()
+        start_text, dash, end_text = spec.partition("-")
+        if not dash:
+            return None
+        try:
+            if start_text == "":
+                # suffix: the last N bytes
+                start = max(0, size - int(end_text))
+                end = size - 1
+            else:
+                start = int(start_text)
+                end = int(end_text) if end_text else size - 1
+        except ValueError:
+            return None
+        if start < 0 or start >= size or end < start:
+            return None
+        return start, min(end, size - 1)
+
+    def provision_runtime(self, rel, target):
+        """Best-effort CDN fetch for one missing CheerpJ runtime file, cached
+        next to loader.js so the browser never has to leave this machine
+        again. Only callable for paths under cheerpj/."""
+        source = "https://cjrtnc.leaningtech.com/4.3/" + rel[len("cheerpj/4.3/"):]
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        for attempt in range(5):
+            try:
+                request = urllib.request.Request(source, headers={"User-Agent": UA})
+                with urllib.request.urlopen(request, timeout=60) as response:
+                    data = response.read()
+                tmp = target + ".part"
+                open(tmp, "wb").write(data)
+                os.replace(tmp, target)
+                print("[searxng-bridge] self-hosted runtime file: %s (%d bytes)"
+                      % (rel, len(data)), flush=True)
+                return
+            except Exception as exc:
+                print("[searxng-bridge] runtime fetch attempt %d for %s failed: %s"
+                      % (attempt + 1, rel, exc), flush=True)
+                time.sleep(2)
 
     def log_message(self, fmt, *args):
         print("[searxng-bridge]", fmt % args, flush=True)

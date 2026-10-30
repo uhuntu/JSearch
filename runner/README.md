@@ -291,6 +291,47 @@ The author's email sat in the Frame title: `JSearch 1.2.3
 stub contract left unfilled, until a runner twenty-four years later filled
 it.
 
+## Running it in the browser (CheerpJ)
+
+The same untouched bytecode also runs inside a modern browser. CheerpJ
+compiles a JVM to WebAssembly, and the bridge serves everything the page
+needs on its own origin — the classes, the engine table, the loader page,
+and the CheerpJ runtime itself:
+
+```sh
+./start-windows.cmd     # or: python3 SearxngBridge.py &, then open the page
+# http://127.0.0.1:8902/app/
+```
+
+The page initializes the runtime and runs `JSearchRunner` from
+`JSearch2002.jar`; the 2002 UI appears as an AWT window inside the tab,
+menu bar included, with searches going through the same-origin bridge to
+DeepSeek. `first-light-browser.png` is that first run — a live DeepSeek
+search in progress, Chinese rendering perfectly. The applet is back where
+the 2002 author meant it to be: a web page, this time hosted by a WASM JVM
+instead of IE.
+
+Three things this taught, for whoever redoes it:
+
+- **The static handler must answer HTTP Range requests with 206.** CheerpJ
+  loads the JRE jars (`rt.jar` alone is 27MB) with ranges and refuses to
+  start without them: *"HTTP server does not support the 'Range' header.
+  CheerpJ cannot run."* The `.js` MIME type matters too — dynamic
+  `import()` rejects modules served as anything but `text/javascript`.
+- **The runtime is self-hosted, not linked from the CDN.** This machine's
+  browser does not use the proxy that reaches `cjrtnc.leaningtech.com`, so
+  a CDN `<script src>` never loads. The bridge pulls each runtime file
+  through its own proxy environment on first request and caches it under
+  `cheerpj-app/cheerpj/4.3/` — after one visit the page is fully offline.
+- **The classpath argument of `cheerpjRunMain` never fetches anything here**
+  (relative and absolute both silently no-op); the jar route —
+  `cheerpjRunJar("JSearch2002.jar")`, built by `jar cfe … -C classes .` —
+  is the one that works.
+
+`cheerpj-app/` is generated (class copies, engine table, jar, runtime
+cache) and gitignored apart from the authored `index.html`;
+`start-windows.cmd` refreshes the jar when it is missing.
+
 ## Honest scope
 
 The applet UI, threading, scraping and dedup are the original 2002 code, and
