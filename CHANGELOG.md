@@ -31,6 +31,14 @@ are archive housekeeping. This repo does not version a live search service.
   character pairs; Chinese and mixed queries no longer silently skip the
   check. Single Han characters and short English-only queries remain exempt
   because they supply insufficient evidence.
+- `jsearxng/`: a Chinese query whose results contain no Chinese at all now
+  reports by engine: one that cannot answer Chinese anyway (stackexchange,
+  hn, marginalia) says "the engine likely does not cover this language",
+  while a Chinese-capable engine keeps the bot-block suspicion — the first
+  live Chinese query on a Windows box showed stackexchange and hn wearing a
+  bot-wall accusation that was really an English-only index answering a
+  Chinese query, and showed why bing must keep its own. Engines now carry
+  that fact (`EngineEntry.chinese`) instead of the message guessing it.
 - `modern/`: a fourth `WebServer` mode, `live`, that runs the same `Engine`
   records, `SearchService` fan-out and `ResultCollector` dedup against four
   public APIs that need no key — Wikipedia, Stack Exchange, Hacker News, and a

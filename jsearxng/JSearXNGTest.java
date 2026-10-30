@@ -159,6 +159,19 @@ public class JSearXNGTest {
         ok("a URL mention counts",
                 JSearXNG.sanityOk("marginalia", List.of(new JSearXNG.Result(
                         "t", "https://marginalia.nu/", "", "hn"))));
+        ok("a Chinese query against English-only results names the language, not a bot",
+                JSearXNG.rejectionReason("搜索引擎", false,
+                        List.of(hit("Institutional reform of the State Council", "https://example.com")))
+                        .contains("does not cover this language"));
+        ok("a Chinese response without the query's terms is still a bot-block suspicion",
+                JSearXNG.rejectionReason("搜索引擎", false,
+                        List.of(hit("百度一下，你就知道", "https://www.baidu.com"))).contains("bot-block"));
+        ok("a Chinese-capable engine answering no Chinese keeps the bot-block suspicion",
+                JSearXNG.rejectionReason("搜索引擎", true,
+                        List.of(hit("Institutional reform of the State Council", "https://example.com")))
+                        .contains("bot-block"));
+        ok("an English query keeps the bot-block suspicion",
+                JSearXNG.rejectionReason("searxng self hosted", true, poison).contains("bot-block"));
     }
 
     static JSearXNG.Result hit(String title, String url) {
@@ -166,7 +179,7 @@ public class JSearXNGTest {
     }
 
     static JSearXNG.EngineEntry engine(String name, JSearXNG.SearchFn fn) {
-        return new JSearXNG.EngineEntry(name, "test", fn);
+        return new JSearXNG.EngineEntry(name, "test", false, fn);
     }
 
     static void testSearchRunner() throws Exception {

@@ -311,7 +311,7 @@ descendant.
 
 ```sh
 cd jsearxng && java JSearXNG.java     # http://127.0.0.1:8092/
-cd jsearxng && ./test.sh              # 149 checks, no network
+cd jsearxng && ./test.sh              # 153 checks, no network
 ```
 
 It is the only directory here whose subject is the present rather than the past,

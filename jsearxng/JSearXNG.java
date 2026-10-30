@@ -72,15 +72,19 @@ public class JSearXNG {
     record SearchData(List<Result> results, List<Outcome> engines,
                       long durationMs, int duplicatesDropped) {}
 
-    record EngineEntry(String name, String kind, SearchFn fn) {}
+    record EngineEntry(String name, String kind, boolean chinese, SearchFn fn) {}
+    // `chinese`: whether this engine can answer a Chinese query at all. It
+    // decides which honesty the relevance rejection carries — a Chinese
+    // query answered with no Chinese is a language mismatch for hn but a
+    // poisoning signal for bing.
 
     static final List<EngineEntry> ENGINES = List.of(
-            new EngineEntry("bing", "web", JSearXNG::searchBing),
-            new EngineEntry("searxng", "metasearch", JSearXNG::searchSearxng),
-            new EngineEntry("marginalia", "web", JSearXNG::searchMarginalia),
-            new EngineEntry("wikipedia", "reference", JSearXNG::searchWikipedia),
-            new EngineEntry("stackexchange", "q&a", JSearXNG::searchStackexchange),
-            new EngineEntry("hn", "discussions", JSearXNG::searchHn));
+            new EngineEntry("bing", "web", true, JSearXNG::searchBing),
+            new EngineEntry("searxng", "metasearch", true, JSearXNG::searchSearxng),
+            new EngineEntry("marginalia", "web", false, JSearXNG::searchMarginalia),
+            new EngineEntry("wikipedia", "reference", true, JSearXNG::searchWikipedia),
+            new EngineEntry("stackexchange", "q&a", false, JSearXNG::searchStackexchange),
+            new EngineEntry("hn", "discussions", false, JSearXNG::searchHn));
 
     // ------------------------------------------------------------------
     // fetch
@@ -350,13 +354,18 @@ public class JSearXNG {
 
     /**
      * Poisoned anti-bot responses parse fine but are about nothing — Bing
-     * serves random popular pages instead of an error. If no result mentions
-     * any significant query term, treat the response as a block page.
+     * serves random popular pages instead of an error. Returns null when the
+     * response passes; otherwise the reason, verbatim for the engine's chip.
+     * A pure-Chinese query answered with no Chinese at all is reported as a
+     * language mismatch — but only for engines that cannot answer Chinese
+     * anyway; from a Chinese-capable engine the same shape is the poisoning
+     * signal it always was.
      */
-    static boolean sanityOk(String query, List<Result> hits) {
+    static String rejectionReason(String query, boolean chinese, List<Result> hits) {
         List<String> tokens = new ArrayList<>();
         Matcher words = Pattern.compile("\\p{IsHan}+|[\\p{L}\\p{N}_&&[^\\p{IsHan}]]+")
                 .matcher(query.toLowerCase(Locale.ROOT));
+        boolean hanQuery = true;
         while (words.find()) {
             String t = words.group();
             if (Character.UnicodeScript.of(t.codePointAt(0)) == Character.UnicodeScript.HAN) {
@@ -365,16 +374,37 @@ public class JSearXNG {
                 for (int i = 0; i + 1 < chars.length; i++) {
                     tokens.add(new String(chars, i, 2));
                 }
-            } else if (t.length() > 2) tokens.add(t);
+            } else if (t.length() > 2) {
+                tokens.add(t);
+                hanQuery = false;
+            }
         }
-        if (tokens.isEmpty() || hits.isEmpty()) return true;
+        if (tokens.isEmpty() || hits.isEmpty()) return null;
+        boolean hitsHaveHan = false;
         for (Result r : hits) {
             String blob = (r.title() + " " + r.snippet() + " " + r.url()).toLowerCase(Locale.ROOT);
             for (String t : tokens) {
-                if (blob.contains(t)) return true;
+                if (blob.contains(t)) return null;
+            }
+            if (!hitsHaveHan) {
+                for (int i = 0; i < blob.length(); ) {
+                    int cp = blob.codePointAt(i);
+                    if (Character.UnicodeScript.of(cp) == Character.UnicodeScript.HAN) {
+                        hitsHaveHan = true;
+                        break;
+                    }
+                    i += Character.charCount(cp);
+                }
             }
         }
-        return false;
+        return hanQuery && !chinese && !hitsHaveHan
+                ? "response failed the relevance check (query terms absent) — the query is Chinese but the"
+                        + " response has none; the engine likely does not cover this language"
+                : "response failed the relevance check (query terms absent) — likely a bot-block page";
+    }
+
+    static boolean sanityOk(String query, List<Result> hits) {
+        return rejectionReason(query, false, hits) == null;
     }
 
     static String normalize(String url) {
@@ -428,9 +458,9 @@ public class JSearXNG {
                             try {
                                 List<Result> hits = entry.fn().run(query);
                                 hits = List.copyOf(hits.subList(0, Math.min(hits.size(), depth)));
-                                outcome = !sanityOk(query, hits)
-                                        ? new Outcome(entry.name(), List.of(),
-                                            "response failed the relevance check (query terms absent) — likely a bot-block page", elapsed(start))
+                                String rejected = rejectionReason(query, entry.chinese(), hits);
+                                outcome = rejected != null
+                                        ? new Outcome(entry.name(), List.of(), rejected, elapsed(start))
                                         : new Outcome(entry.name(), hits, null, elapsed(start));
                             } catch (InterruptedException cancelled) {
                                 Thread.currentThread().interrupt();

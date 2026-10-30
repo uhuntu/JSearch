@@ -81,8 +81,15 @@ mentions any query term, the engine's slot shows
 garbage results. The check recognizes Unicode words and overlapping pairs of
 Chinese characters, including mixed Chinese/English queries. A one-character
 Chinese query or short English-only query has too little evidence for rejection.
-This is a keyword heuristic, not a semantic relevance score; synonyms can still
-produce false rejections. Do not trust a scraped engine that returns "success".
+When the query is Chinese and the response contains no Chinese at all, the
+slot's message depends on the engine: one that cannot answer Chinese anyway
+(stackexchange, hn, marginalia) reads *the engine likely does not cover this
+language* — a Chinese query against an English-only API is a mismatch by
+construction, not a bot wall — while a Chinese-capable engine returning no
+Chinese keeps the bot-block suspicion, because that shape is what its
+poisoning looks like. This is a keyword heuristic, not a semantic relevance score;
+synonyms can still produce false rejections. Do not trust a scraped engine that
+returns "success".
 
 ## Honesty rules
 
@@ -124,7 +131,7 @@ error,ms}], durationMs, duplicatesDropped}`.
 ## Tests
 
 ```sh
-./test.sh     # 149 checks, no network, exit 0 or 1
+./test.sh     # 153 checks, no network, exit 0 or 1
 ```
 
 The suite covers entity handling, query parsing, URL dedup keys, relevance,
