@@ -31,3 +31,7 @@ jsearxng/out/
 
 # ZCode IDE workspace rules (per-user, auto-synced from .gitignore)
 .zcodeignore
+
+# WorkBuddy session data (agent memory and scratch state; per-machine,
+# not part of the archive)
+.workbuddy/
