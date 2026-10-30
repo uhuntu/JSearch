@@ -95,6 +95,7 @@ deduplicated across the layers.
 | Wikipedia | official public API (`/w/api.php`) | no key, designed for this |
 | Stack Overflow | official public API (`api.stackexchange.com`) | no key, 300 req/day/IP |
 | Hacker News | official Algolia public API | no key, designed for this |
+| DeepSeek | official Search API (`api.deepseek.com`) | the first keyed engine: Chinese-native index, authority-rated, rerank-ordered; key via `DEEPSEEK_API_KEY`, billed per successful request, off until the key exists |
 
 The SearXNG entry makes this a metasearcher over a metasearcher: one of the
 fanned-out engines is itself a fan-out. Duplicates between the layers are
@@ -165,7 +166,7 @@ error,ms}], durationMs, duplicatesDropped}`.
 ## Tests
 
 ```sh
-./test.sh     # 153 checks, no network, exit 0 or 1
+./test.sh     # 163 checks, no network, exit 0 or 1
 ```
 
 The suite covers entity handling, query parsing, URL dedup keys, relevance,

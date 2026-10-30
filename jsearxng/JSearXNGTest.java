@@ -41,6 +41,8 @@ public class JSearXNGTest {
         testNormalize();
         section("sanityOk — Bing serves popular pages instead of errors when it smells a bot");
         testSanityOk();
+        section("deepseek — the keyed engine: response mapping and request escaping");
+        testDeepseek();
         section("search scheduling — injected engines, deadlines and shared capacity");
         testSearchRunner();
         section("unwrapBing — the ck/a tracking redirect hides the destination in base64url");
@@ -176,6 +178,27 @@ public class JSearXNGTest {
 
     static JSearXNG.Result hit(String title, String url) {
         return new JSearXNG.Result(title, url, "", "stub");
+    }
+
+    static void testDeepseek() {
+        Object parsed = Json.parse("{\"results\":["
+                + "{\"rerank_score\":2.4,\"title\":\"DeepSeek V4 model released\","
+                + "\"url\":\"https://example.com/v4\",\"snippet\":\"short summary\"},"
+                + "{\"title\":\"\\u6f22\\u5b57\\u6a19\\u984c\",\"url\":\"https://example.com/zh\","
+                + "\"snippet\":\"\\u4e2d\\u6587\\u6458\\u8981\"}]}");
+        List<JSearXNG.Result> out = JSearXNG.deepseekResults(parsed);
+        eq("deepseek maps both results in api order", 2, out.size());
+        eq("deepseek keeps the title", "DeepSeek V4 model released", out.get(0).title());
+        eq("deepseek keeps the url", "https://example.com/v4", out.get(0).url());
+        eq("deepseek keeps the display snippet", "short summary", out.get(0).snippet());
+        eq("deepseek names its engine", "deepseek", out.get(0).engine());
+        ok("deepseek carries Chinese titles through", out.get(1).title().contains("漢字"));
+        ok("an empty results array maps to no results",
+                JSearXNG.deepseekResults(Json.parse("{\"results\":[]}")).isEmpty());
+        eq("jsonString quotes an empty string", "\"\"", JSearXNG.jsonString(""));
+        eq("jsonString escapes quote, backslash and newline",
+                "\"a\\\"b\\\\c\\nd\"", JSearXNG.jsonString("a\"b\\c\nd"));
+        eq("jsonString keeps CJK literal", "\"搜索引擎\"", JSearXNG.jsonString("搜索引擎"));
     }
 
     static JSearXNG.EngineEntry engine(String name, JSearXNG.SearchFn fn) {
@@ -424,11 +447,11 @@ public class JSearXNGTest {
         eq("first on null", "", JSearXNG.first(null));
         eq("first on empty", "", JSearXNG.first(List.of()));
         eq("first picks the first", "a", JSearXNG.first(List.of("a", "b")));
-        eq("six engines registered", 6, JSearXNG.ENGINES.size());
+        eq("seven engines registered", 7, JSearXNG.ENGINES.size());
         List<String> names = new ArrayList<>();
         for (JSearXNG.EngineEntry e : JSearXNG.ENGINES) names.add(e.name());
         eq("engine names", List.of("bing", "searxng", "marginalia", "wikipedia",
-                "stackexchange", "hn"), names);
+                "stackexchange", "hn", "deepseek"), names);
     }
 
     static void testRender() {

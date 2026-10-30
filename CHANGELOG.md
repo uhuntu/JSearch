@@ -39,6 +39,14 @@ are archive housekeeping. This repo does not version a live search service.
   bot-wall accusation that was really an English-only index answering a
   Chinese query, and showed why bing must keep its own. Engines now carry
   that fact (`EngineEntry.chinese`) instead of the message guessing it.
+- `jsearxng/`: a seventh engine, DeepSeek — the official Search API
+  (api.deepseek.com) behind the first key an engine here has ever kept:
+  `DEEPSEEK_API_KEY`, billed per successful request, Chinese-native index
+  with authority ratings and rerank ordering. Without the key the engine
+  names the fact on its chip instead of pretending the web is empty; with
+  it, Chinese queries stop depending on upstream engines that wall fresh
+  SearXNG instances. The response mapping and the request-string escaper
+  are tested offline; the live call costs money and is not exercised by CI.
 - `jsearxng/README.md`: the Windows path written down — a portable JDK under
   `%USERPROFILE%\.jdks` for the 16+ floor, the three settings a default WSL
   SearXNG install gets wrong for this use (`json` in `search.formats`,

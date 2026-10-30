@@ -84,7 +84,8 @@ public class JSearXNG {
             new EngineEntry("marginalia", "web", false, JSearXNG::searchMarginalia),
             new EngineEntry("wikipedia", "reference", true, JSearXNG::searchWikipedia),
             new EngineEntry("stackexchange", "q&a", false, JSearXNG::searchStackexchange),
-            new EngineEntry("hn", "discussions", false, JSearXNG::searchHn));
+            new EngineEntry("hn", "discussions", false, JSearXNG::searchHn),
+            new EngineEntry("deepseek", "web", true, JSearXNG::searchDeepseek));
 
     // ------------------------------------------------------------------
     // fetch
@@ -332,6 +333,69 @@ public class JSearXNG {
             out.add(new Result(title, url, snippet, "hn"));
         }
         return out;
+    }
+
+    /** The one keyed engine: DeepSeek's own search index, Chinese-native and
+     * authority-rated, reached through the official Search API. The key
+     * arrives via DEEPSEEK_API_KEY; without it the engine names the fact
+     * instead of pretending the web is empty. */
+    static List<Result> searchDeepseek(String query) throws Exception {
+        String key = System.getenv("DEEPSEEK_API_KEY");
+        if (key == null || key.isBlank()) {
+            throw new IllegalStateException(
+                    "DEEPSEEK_API_KEY not set — the keyed DeepSeek engine stays off until it is");
+        }
+        String payload = "{\"query\":" + jsonString(query) + ",\"count\":" + RESULTS_PER_ENGINE + "}";
+        HttpRequest request = HttpRequest.newBuilder(URI.create("https://api.deepseek.com/v1/tools/search"))
+                .header("Authorization", "Bearer " + key)
+                .header("Content-Type", "application/json")
+                .timeout(FETCH_TIMEOUT)
+                .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
+                .build();
+        HttpResponse<String> response =
+                HTTP.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        if (response.statusCode() >= 300) {
+            String detail = response.body() == null ? "" : response.body();
+            throw new IllegalStateException("HTTP " + response.statusCode()
+                    + " from api.deepseek.com — " + detail.substring(0, Math.min(detail.length(), 120)));
+        }
+        return deepseekResults(parseJson(response.body()));
+    }
+
+    /** The rerank-ordered results of a DeepSeek Search response. The display
+     * snippet travels; the model-facing summary (~600 chars) would starve
+     * the other engines' chips for space. */
+    static List<Result> deepseekResults(Object parsed) {
+        List<Result> out = new ArrayList<>();
+        for (Object o : (List<?>) get((Map<?, ?>) parsed, "results", List.of())) {
+            Map<?, ?> hit = (Map<?, ?>) o;
+            out.add(new Result(str(hit.get("title"), "(untitled)"),
+                    str(hit.get("url"), ""), str(hit.get("snippet"), ""), "deepseek"));
+        }
+        return out;
+    }
+
+    /** Minimal JSON string literal, for the one engine that POSTs. */
+    static String jsonString(String s) {
+        StringBuilder out = new StringBuilder("\"");
+        for (int i = 0; i < s.length(); ) {
+            int cp = s.codePointAt(i);
+            i += Character.charCount(cp);
+            if (cp == '"' || cp == '\\') {
+                out.append('\\').appendCodePoint(cp);
+            } else if (cp == '\n') {
+                out.append("\\n");
+            } else if (cp == '\r') {
+                out.append("\\r");
+            } else if (cp == '\t') {
+                out.append("\\t");
+            } else if (cp < 0x20) {
+                out.append(String.format("\\u%04x", cp));
+            } else {
+                out.appendCodePoint(cp);
+            }
+        }
+        return out.append('"').toString();
     }
 
     static String str(Object o, String fallback) {

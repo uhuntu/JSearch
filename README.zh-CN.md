@@ -147,7 +147,7 @@ SearXNG 的引擎池和几个无需密钥的公开 API。它内部的 JSON 解�
 
 ```sh
 cd jsearxng && java JSearXNG.java     # http://127.0.0.1:8092/
-cd jsearxng && ./test.sh              # 153 项检查，不出网
+cd jsearxng && ./test.sh              # 163 项检查，不出网
 ```
 
 这是本仓库唯一以"当下"为主题的目录，也因此是唯一会随上游变动而改动的目录——

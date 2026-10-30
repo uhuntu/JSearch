@@ -151,7 +151,7 @@ refs/                        GB8567-88 standard archive, 使用说明书, relate
 artifacts/Classes/           compiled .class output (stale, see caveat below)
 modern/                       compiling reference redesign + tests, incl. a live mode (not the original)
 runner/                       runs the untouched Sources/ applet on a modern JDK (local shim + demo engine + optional SearXNG bridge)
-jsearxng/                     the living descendant: a real metasearcher in Java, 2002 UI, six engines
+jsearxng/                     the living descendant: a real metasearcher in Java, 2002 UI, seven engines
 versions/                     the other three generations
   2000-08/                   v1.2.3 baseline
   2001-12/JSApplet/          last large version
@@ -311,7 +311,7 @@ descendant.
 
 ```sh
 cd jsearxng && java JSearXNG.java     # http://127.0.0.1:8092/
-cd jsearxng && ./test.sh              # 153 checks, no network
+cd jsearxng && ./test.sh              # 163 checks, no network
 ```
 
 It is the only directory here whose subject is the present rather than the past,
