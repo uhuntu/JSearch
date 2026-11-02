@@ -40,8 +40,31 @@ over.
 make                 # compile
 make test            # compile and run tests
 make web             # local demo of the 2002 URL-key bug
+make swing           # the 2002 UI rewritten in Swing, on the same core
 make clean           # clean build output
 ```
+
+### The Swing edition (`make swing`)
+
+`SwingDemo` is the third answer to the archive's question - not "how should
+it have been built" (the web UI) but "what would 2003's migration to Swing
+have looked like". The search core is the same `SearchService` /
+`ResultCollector` / `EngineRepository` the web UI runs on; only the shell
+differs, and each 2002 AWT element has a direct Swing counterpart:
+
+| 2002 AWT | Swing reference |
+|---|---|
+| `List` + two label headers | `JTable` (主题/位置/引擎) |
+| three stacked `TextArea`s switched by clickable pills | `JTabbedPane` (预览/状态/消息) |
+| `CardLayout` 引擎/选项/关于 switched by radio pills | `JTabbedPane` |
+| hand-rolled pool, `_stop` flag, sleep polling, two static locks | one `SwingWorker` per search; `cancel(true)`, `publish`/`process` |
+| URL-keyed `Hashtable` | `EngineRepository` - identity is (name, category) |
+
+The folder-tab painting problem documented in `docs/ANALYSIS.md` ("two
+folder-tab labels wear the background color") cannot recur here: Swing tabs
+are drawn by the component, not by hand-tinted `Label`s. Default is the
+canned fetcher (no network); pass a JSEngines-format file as the first
+argument to go through `HttpPageFetcher`.
 
 **Maven (any platform with mvn):**
 

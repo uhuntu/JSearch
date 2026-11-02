@@ -1,7 +1,7 @@
 # JSearch modern/ Makefile
 # Requires JDK 11 or later
 
-.PHONY: all build test benchmark web clean help
+.PHONY: all build test benchmark web swing clean help
 
 OUT_DIR := out
 SRC_DIR := src
@@ -32,6 +32,11 @@ web: build
 	@echo ""
 	@echo "Launching Web UI on http://localhost:8080..."
 	java -Dfile.encoding=UTF-8 -cp $(OUT_DIR) jsearch.WebServer
+
+swing: build
+	@echo ""
+	@echo "Launching the Swing reference UI (needs a display)..."
+	java -Dfile.encoding=UTF-8 -cp $(OUT_DIR) jsearch.SwingDemo
 
 clean:
 	@echo "Cleaning $(OUT_DIR)..."
