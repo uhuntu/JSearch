@@ -47,6 +47,9 @@ Flags, for unattended verification:
 ./run.sh --go --snap=x.png # additionally save a PNG of the applet after 6s
 ./run.sh --go --engine=SearXNG --levels=2
                            # search the bridge engine, two pages deep
+./run.sh --fix-tab-colors  # recolor the two background-colored folder tabs
+                           # (a 2002 cosmetic slip - see docs/ANALYSIS.md);
+                           # off by default, the archived pixels are the point
 ```
 
 `--engine=` takes a comma-separated list of engine-name prefixes and selects

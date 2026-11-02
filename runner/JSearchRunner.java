@@ -40,12 +40,14 @@ import java.util.Enumeration;
  * See README.md.
  *
  * Usage: java -cp classes JSearchRunner [file:/...runner/] [--go] [--snap=FILE]
- *                            [--engine=NAME[,NAME...]] [--levels=N]
+ *                            [--engine=NAME[,NAME...]] [--levels=N] [--fix-tab-colors]
  *   --go         auto-run one search for "JSearch" a moment after startup
  *   --snap=FILE  save a PNG of the applet 6 seconds after startup
  *   --engine=    which engines to select in the Chinese category, matched by
  *                prefix and comma-separated (default: LocalDemo)
  *   --levels=N   how many pages the applet's own level loop fetches per engine
+ *   --fix-tab-colors  recolor the two background-colored folder tabs (cosmetic,
+ *                off by default - see recolorBackgroundTabs)
  * With no file: argument the base URL is derived from this class's location.
  */
 public class JSearchRunner {
@@ -53,11 +55,13 @@ public class JSearchRunner {
     public static void main(String[] args) throws Exception {
         String base = null;
         boolean autoSearch = false;
+        boolean fixTabs = false;
         String snapPath = null;
         String engineSpec = "LocalDemo";
         int levels = 0;
         for (String a : args) {
             if ("--go".equals(a)) autoSearch = true;
+            else if ("--fix-tab-colors".equals(a)) fixTabs = true;
             else if (a.startsWith("--snap=")) snapPath = a.substring(7);
             else if (a.startsWith("--engine=")) engineSpec = a.substring(9);
             else if (a.startsWith("--levels=")) levels = Integer.parseInt(a.substring(9));
@@ -128,6 +132,7 @@ public class JSearchRunner {
 
         applet.init();
         keepAuthoredGeometry(applet);
+        if (fixTabs) recolorBackgroundTabs(applet);
 
         EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -530,6 +535,25 @@ public class JSearchRunner {
      */
     static void keepAuthoredGeometry(Container root) {
         record(root);
+    }
+
+    /**
+     * Cosmetic, opt-in (--fix-tab-colors), and the one runner-side change that
+     * touches how the applet *looks*: the 类别 and 搜索引擎 folder-tab labels
+     * use the same #6699FF as the applet's own background (JSApplet.java:348
+     * vs :432/:437 - the same constant, almost certainly a copy-paste slip;
+     * every other tab sits in darker #3333FF). A folder tab needs contrast
+     * with the page it sits on, so these two melt into the background and the
+     * text appears to float, reading as misaligned borders. Recoloring them to
+     * the sibling tabs' #3333FF restores the tab language the other eight
+     * labels follow. Off by default because the 2002 pixels are the artefact.
+     */
+    static void recolorBackgroundTabs(JSApplet applet) {
+        java.awt.Color tabBlue = new java.awt.Color(3355647);
+        applet.categoryLa.setBackground(tabBlue);
+        applet.searchEnginesLa.setBackground(tabBlue);
+        System.out.println("[runner] --fix-tab-colors: 类别/搜索引擎 tabs "
+                + "recolored from the background color to the sibling-tab blue");
     }
 
     static void record(Container c) {

@@ -187,6 +187,24 @@ it is a hack that depends on the attribute name containing those four characters
 in that order — an `<a name=...>` tag placed before the link would have produced
 a false match.
 
+### Two folder-tab labels wear the background color
+
+The UI's visual language is folder tabs: each colored label sits directly on
+top of its panel (搜索 at y=6..26 over searchPa at y=26; 结果 at y=116..136
+over the header row at y=136), and eight of the ten tabs are drawn in dark
+blue `#3333FF` against the applet background `#6699FF` — clearly visible. Two
+are not: `categoryLa` and `searchEnginesLa` (`JSApplet.java:432` and `:437`)
+use `new Color(6724095)` — the same `#6699FF` constant the applet itself is
+painted with at `:348`. Those two tabs melt into the page, leaving their text
+apparently floating beside panels whose edges no longer read as aligned; a
+viewer sees misaligned borders where in fact there are none. Found by pixel
+measurement after a user reported exactly that: the lists sit precisely at
+their authored coordinates, the two labels too — nothing is misplaced, the
+tab color just equals the page color. Almost certainly a copy-paste of the
+background constant where the sibling tabs' `3355647` was meant. The runner
+ships an opt-in cosmetic correction (`--fix-tab-colors`) for it; the archive
+pixels stay untouched.
+
 ---
 
 ## The `ENGINES/` snapshots: Java in December 2001
