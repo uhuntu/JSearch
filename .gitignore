@@ -29,6 +29,10 @@ runner-combined.log
 # jsearxng/ build output (the suite compiles into out/, like modern/)
 jsearxng/out/
 
+# playwright-cli session state and Python bytecode (runner debugging debris)
+.playwright-cli/
+__pycache__/
+
 # ZCode IDE workspace rules (per-user, auto-synced from .gitignore)
 .zcodeignore
 

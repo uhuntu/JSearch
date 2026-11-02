@@ -28,6 +28,7 @@ Environment:
 """
 import json
 import os
+import re
 import sys
 import time
 import urllib.parse
@@ -264,6 +265,25 @@ class Handler(BaseHTTPRequestHandler):
             body = b"forbidden"
             code, ctype = 403, "text/plain"
         else:
+            if os.path.isdir(target):
+                # CheerpJ decides a path is a directory purely from the
+                # responseURL ending in "/" (see ddlOnLoad and webListAsync in
+                # cheerpOS.js: a slashed responseURL becomes S_IFDIR, and the
+                # listing comes from a sibling index.list file). fontconfig
+                # walks /lt/fc/ttf this way, and without it the font manager
+                # dies with "failed to initialize fontconfig" and the applet
+                # paints nothing but white.
+                if not path.endswith("/"):
+                    self.send_response(301)
+                    self.send_header("Location", path + "/")
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
             if not os.path.isfile(target) and rel.startswith("cheerpj/"):
                 self.provision_runtime(rel, target)
             elif (os.path.isfile(target) and os.path.getsize(target) == 0
@@ -352,13 +372,32 @@ class Handler(BaseHTTPRequestHandler):
         if any(ch in rel for ch in '*:?"<>|'):
             print("[searxng-bridge] runtime path not cacheable here: %s" % rel, flush=True)
             return
-        source = "https://cjrtnc.leaningtech.com/4.3/" + rel[len("cheerpj/4.3/"):]
+        # The version comes from the request path itself (cheerpj/4.3/...,
+        # cheerpj/5.0/...), so one provisioner serves every self-hosted
+        # runtime generation.
+        m = re.match(r"cheerpj/([^/]+)/(.*)", rel)
+        source = "https://cjrtnc.leaningtech.com/%s/%s" % (m.group(1), m.group(2))
         os.makedirs(os.path.dirname(target), exist_ok=True)
+        # The corporate proxy answers some CDN files with 0-byte bodies or
+        # TLS EOFs; a direct connection reaches the same CDN cleanly. Try
+        # direct first and fall back to the proxied opener.
+        direct = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        proxied = urllib.request.build_opener()
+        openers = [direct, proxied]
         for attempt in range(5):
             try:
-                request = urllib.request.Request(source, headers={"User-Agent": UA})
-                with urllib.request.urlopen(request, timeout=60) as response:
-                    data = response.read()
+                last_exc = None
+                for opener in openers:
+                    try:
+                        request = urllib.request.Request(source, headers={"User-Agent": UA})
+                        with opener.open(request, timeout=60) as response:
+                            data = response.read()
+                        break
+                    except Exception as exc:
+                        last_exc = exc
+                        data = b""
+                if last_exc is not None and not data:
+                    raise last_exc
                 if len(data) < 64:
                     # An empty or stub body is the flaky proxy talking, not the
                     # runtime file; caching it would poison every later request

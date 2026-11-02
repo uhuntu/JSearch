@@ -299,10 +299,36 @@ needs on its own origin — the classes, the engine table, the loader page,
 and the CheerpJ runtime itself:
 
 ```sh
-./build-cheerpj.sh      # Java 8 bytecode + engine table into cheerpj-app/
+./build-cheerpj.sh      # Java 8 bytecode + engine table + fonts into cheerpj-app/
 ./start-windows.cmd     # or: python3 SearxngBridge.py &, then open the page
 # http://127.0.0.1:8902/app/
 ```
+
+The page runs CheerpJ **5.0**, not 4.3. Two things were learned the hard way
+while re-establishing this route in November 2026, after the runtime cache
+was rebuilt and every applet on the page — this one and a control applet —
+painted nothing but a white rectangle:
+
+- **CheerpJ's Linux font stack needs a populated `fc/ttf/`.** Its fontconfig
+  implementation reads `fc/fonts/fonts.conf` (which points at `/lt/fc/ttf`)
+  and enumerates that directory through a sibling `index.list` file — over
+  HTTP a directory cannot be listed, so the runtime fetches
+  `<dir>/index.list` and treats a redirect to a trailing-slash URL as the
+  directory itself. With no fonts in it, the first text draw dies with
+  `java.lang.InternalError: failed to initialize fontconfig` and nothing
+  ever paints. The official CDN ships no `fc/` payload for 4.3 or 5.0, so
+  `build-cheerpj.sh` copies the host's DejaVu faces and a Noto Sans CJK SC
+  otf (github.com, reachable without the corporate proxy that 0-bytes the
+  CDN font URLs) into `cheerpj/<ver>/fc/ttf/` and writes its `index.list`.
+  The bridge learned two new behaviours for this: directory paths are
+  answered with a redirect to the trailing-slash URL (that is how CheerpJ
+  decides something is a directory) and slashed directory requests get an
+  empty 200; and the runtime provisioner now tries a direct connection
+  before the proxy, deriving the CDN version from the request path.
+- **Self-hosted 4.3 stayed broken anyway.** With the same fonts in place,
+  4.3 got through fontconfig initialization yet still painted only the
+  applet background, while 5.0 rendered both FoilSim (the control) and this
+  applet completely. Hence the loader path in `index.html`.
 
 The page is the 2002 embed page modernized: a `<cheerpj-applet>` element
 carrying the same `<param>` lines `JSearch.html` fed the Java Plug-in,
