@@ -5,6 +5,7 @@ import java.applet.AudioClip;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.Frame;
@@ -124,7 +125,14 @@ public class JSearchRunner {
 
         frame.setLayout(new BorderLayout());
         frame.add(applet, BorderLayout.CENTER);
-        frame.setSize(790, 450);
+        // The 2002 embed page said WIDTH=758 HEIGHT=403 - honor exactly that.
+        // A round 790x450 here stretches the applet, and its background paints
+        // the surplus as ~30px of empty blue down the right side and across
+        // the bottom of an otherwise tight layout (the "borders don't line
+        // up" a viewer sees, and measures, at 2x the authored margins).
+        applet.setPreferredSize(new Dimension(758, 403));
+        frame.setMenuBar(buildMenuBar(applet));
+        frame.pack();
         frame.setMenuBar(buildMenuBar(applet));
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) { System.exit(0); }
