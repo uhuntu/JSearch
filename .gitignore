@@ -18,6 +18,8 @@ modern/target/
 
 # runner/ build output (tracked sources + engine table live beside it)
 runner/classes/
+# appletviewer route's per-user state (JDK 8 classes, generated HTML, policy)
+runner/appletviewer-work/
 
 # runner/ evidence-trail logs, written by the CI job and by anyone reproducing
 # it locally with `./run.sh --go > runner-ci.log`, or by verify.sh --live and

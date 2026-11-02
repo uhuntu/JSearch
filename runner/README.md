@@ -19,6 +19,12 @@ cd runner
 ./run.sh          # opens the applet window; type a query, press 开始搜索 or Enter
 ```
 
+A second, older-school entrance exists: `./run-appletviewer.sh` hosts the
+same applet in a JDK 8 `appletviewer` — Sun's own stub, an `<applet>` tag,
+no shim code between you and 2002 (needs `openjdk-8-jdk`; appletviewer was
+removed from the JDK in 11, and the script keeps its own Java 8 compiled
+copy in `appletviewer-work/`).
+
 On Windows you have three ways in: `./run.sh` from Git Bash; `bash ./run.sh`
 straight from PowerShell (Git's bash is first on PATH); or `.\run.ps1` from
 PowerShell, which needs no Git Bash at all. Note that plain `.\run.sh` in
