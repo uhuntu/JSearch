@@ -133,7 +133,7 @@ public final class SwingReplica {
     }
 
     private void show() {
-        JFrame frame = new JFrame("JSearch 2.0.0.0 - Swing replica (1:1)");
+        JFrame frame = new JFrame("JSearch SR - Swing replica (1:1)");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
             @Override public void windowClosing(WindowEvent e) { service.close(); }
@@ -346,7 +346,7 @@ public final class SwingReplica {
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-        messages.append("JSearch 2.0.0.0 Swing replica - 1:1 layout from controlSetting()\n");
+        messages.append("JSearch SR - Swing replica, 1:1 layout from controlSetting()\n");
         messages.append("engines: " + engines.size() + ", categories: " + categories + "\n");
     }
 

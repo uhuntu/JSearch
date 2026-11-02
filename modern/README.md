@@ -41,7 +41,7 @@ make                 # compile
 make test            # compile and run tests
 make web             # local demo of the 2002 URL-key bug
 make swing           # the 2002 UI rewritten in Swing, on the same core
-make replica         # 1:1 Swing replica of the 2002 AWT screen
+make replica         # JSearch SR - 1:1 Swing replica of the 2002 AWT screen
 make clean           # clean build output
 ```
 
@@ -67,10 +67,12 @@ are drawn by the component, not by hand-tinted `Label`s. Default is the
 canned fetcher (no network); pass a JSEngines-format file as the first
 argument to go through `HttpPageFetcher`.
 
-### The 1:1 replica (`make replica`)
+### JSearch SR - the 1:1 replica (`make replica`)
 
-`SwingReplica` answers a different question: not "what would the migration
-have looked like" but "can Swing paint the 2002 screen exactly". Every
+"SR" for SwingReplica: this line is the project's living face going
+forward. `SwingReplica` answers a different question than `SwingDemo`:
+not "what would the migration have looked like" but "can Swing paint the
+2002 screen exactly". Every
 coordinate, color and font is copied verbatim from `controlSetting()` -
 the same 758x403 absolute layout, the same `#6699FF` page and `#3333FF`/
 `#006400` tab pills, the same quirks (the 类别/搜索引擎 tabs wearing the
