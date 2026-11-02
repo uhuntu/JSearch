@@ -6,10 +6,10 @@ Detailed comparison of the 2002 original and the modern reference design.
 
 | Metric | Original (2002) | Modern Reference |
 |--------|-----------------|------------------|
-| **Files** | 2 (JSApplet.java, SearchThread.java) | 18 (23 with tests) |
-| **Total lines** | 906 | 3,042 main (5,175 with tests) |
+| **Files** | 2 (JSApplet.java, SearchThread.java) | 20 (25 with tests) |
+| **Total lines** | 906 | 3,915 main (6,048 with tests) |
 | **Max class size** | 906 lines (JSApplet) | 1,350 lines (WebServer) |
-| **Avg class size** | 453 lines | 169 lines |
+| **Avg class size** | 453 lines | 196 lines |
 | **Inner classes** | 15 | 0 |
 | **Static fields** | 20+ | 0 |
 
@@ -17,7 +17,10 @@ The modern column counts everything under `modern/src/`, demo included.
 `WebServer` is the demo harness, not a design component — it serves a page,
 an API and the live mode, and it is where the size went. Excluding it and the
 live-mode plumbing (`LiveSearch`, `LiveEngines`, `Json`, `RelevanceCheck`,
-`Demo`, `ApiDemo`), the design classes top out at 175 lines, the two scrapers.
+`Demo`, `ApiDemo`), the next largest are the two desktop UIs — `SwingReplica`
+is 527 lines because a 1:1 copy of `controlSetting()` repeats every coordinate
+on purpose, `SwingDemo` is 342 — and after them the design classes top out at
+175 lines, the two scrapers.
 
 ## Architecture
 

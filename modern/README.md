@@ -41,6 +41,7 @@ make                 # compile
 make test            # compile and run tests
 make web             # local demo of the 2002 URL-key bug
 make swing           # the 2002 UI rewritten in Swing, on the same core
+make replica         # 1:1 Swing replica of the 2002 AWT screen
 make clean           # clean build output
 ```
 
@@ -65,6 +66,28 @@ folder-tab labels wear the background color") cannot recur here: Swing tabs
 are drawn by the component, not by hand-tinted `Label`s. Default is the
 canned fetcher (no network); pass a JSEngines-format file as the first
 argument to go through `HttpPageFetcher`.
+
+### The 1:1 replica (`make replica`)
+
+`SwingReplica` answers a different question: not "what would the migration
+have looked like" but "can Swing paint the 2002 screen exactly". Every
+coordinate, color and font is copied verbatim from `controlSetting()` -
+the same 758x403 absolute layout, the same `#6699FF` page and `#3333FF`/
+`#006400` tab pills, the same quirks (the 类别/搜索引擎 tabs wearing the
+page color on purpose, the active pill turning blue, the button state
+machine of `JSApplet.java:670-679`). What differs is only the chrome Swing
+cannot reach: the buttons' native bevel, the scrollbars, and AWT's black
+list-selection - the parts Windows painted in 2002 anyway.
+
+One nuance worth recording: the applet's own default is the *second*
+category (`categoryLi.select(1)`, `JSApplet.java:595` - English on the
+shipped table), while the shipped runner overrides it to Chinese for
+deterministic demos (`JSearchRunner.java:156-158`) - which is what
+screenshots of the runner show. The replica reproduces the applet's own
+default; the override belongs to the runner.
+
+Default is the canned fetcher (no network); `make replica REP=../runner/JSENGINES.TXT`
+loads the real engine table through `HttpPageFetcher`.
 
 **Maven (any platform with mvn):**
 
