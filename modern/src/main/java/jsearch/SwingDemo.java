@@ -295,6 +295,12 @@ public final class SwingDemo {
                 messages.append("[ui] search complete - " + rows.size()
                         + " unique result(s) (duplicates dropped by the collector)\n");
                 status.append("Search complete. Results: " + rows.size() + "\n");
+                if (!rows.isEmpty()) {
+                    // The 2002 applet pre-selected the first engine result the
+                    // same way; without this the preview starts empty.
+                    table.setRowSelectionInterval(0, 0);
+                    table.scrollRectToVisible(table.getCellRect(0, 0, true));
+                }
             }
         };
         worker.execute();
