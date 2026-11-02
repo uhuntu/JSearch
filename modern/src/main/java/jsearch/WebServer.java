@@ -1204,7 +1204,7 @@ public final class WebServer implements AutoCloseable {
                 + "    let activeFilter = 'all';\n"
                 + "\n"
                 + "    const MODE_NOTES = {\n"
-                + "      modern: 'Modern Ref replays the archive's captured fixtures through the fixed design.',\n"
+                + "      modern: 'Modern Ref replays the archive\\'s captured fixtures through the fixed design.',\n"
                 + "      legacy: '1999 Buggy re-enacts the URL-keyed Hashtable: one stray byte from silently dropping an engine.',\n"
                 + "      compare: 'Side-by-Side runs both designs on the same query and shows what the bug cost.',\n"
                 + "      live: 'Live Web queries four no-key APIs for real — Wikipedia, Stack Exchange, Hacker News, and a local SearXNG if one is running (that one also carries Marginalia, whose own API cannot be spelled in the query format the archive uses). Bing stays out on purpose: its 2026 HTML needs a parser the archive never had, and it answers server IPs with popular pages instead of results.'\n"
