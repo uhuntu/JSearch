@@ -22,6 +22,7 @@ over.
 .\build.ps1          # compile
 .\build.ps1 -Test    # compile and run tests
 .\build.ps1 -Web     # local demo of the 2002 URL-key bug (http://localhost:8080)
+.\build.ps1 -Classic # the 2002 screen re-laid-out in standard Swing
 .\build.ps1 -Clean   # clean build output
 ```
 
@@ -42,6 +43,7 @@ make test            # compile and run tests
 make web             # local demo of the 2002 URL-key bug
 make swing           # the 2002 UI rewritten in Swing, on the same core
 make replica         # JSearch SR - 1:1 Swing replica of the 2002 AWT screen
+make classic         # the 2002 screen re-laid-out in standard Swing
 make clean           # clean build output
 ```
 
@@ -90,6 +92,31 @@ default; the override belongs to the runner.
 
 Default is the canned fetcher (no network); `make replica REP=../runner/JSENGINES.TXT`
 loads the real engine table through `HttpPageFetcher`.
+
+### The 2002 screen, not the pixels (`make classic`)
+
+`SwingClassic` keeps the applet's two columns and habits - 搜索 and 结果 on the
+left, 预览/状态/消息 over 引擎/选项/关于 on the right, categories filtering a
+multi-select engine list - but lays them out with `BorderLayout`, `GridBagLayout`
+and split panes instead of `controlSetting()`'s absolute coordinates. The
+window resizes, the query field grows, and each section is a real tab rather
+than a hand-tinted `Label`. It uses Metal, the JDK's cross-platform look (the
+default Swing theme), rather than the Windows platform look or a custom skin.
+
+Default is the canned fetcher (no network), run once on launch so the window
+opens with content; `make classic REP=../runner/JSENGINES.TXT` starts empty
+against the live engine table through `HttpPageFetcher`.
+
+### Three Swing answers, side by side
+
+| Line | Question it answers | What it keeps | What it gives up |
+|---|---|---|---|
+| `SwingDemo` (`make swing`) | what would the 2003 migration have looked like? | the search flow and function | the 2002 regions and vocabulary |
+| `SwingReplica` (`make replica`) | can Swing paint the 2002 screen exactly? | every coordinate, color and font | resizing and a modern layout |
+| `SwingClassic` (`make classic`) | what if the 2002 screen were laid out today? | 2002 regions, labels and habits | pixel fidelity and the 2002 palette |
+
+All three run the same core: `SearchService`, `ResultCollector` and
+`EngineRepository`. Only the shell changes.
 
 **Maven (any platform with mvn):**
 

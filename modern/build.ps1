@@ -5,6 +5,7 @@ param(
     [switch]$Test,
     [switch]$Benchmark,
     [switch]$Web,
+    [switch]$Classic,
     [int]$Port = 8080,
     [switch]$Clean
 )
@@ -49,6 +50,12 @@ if ($Test) {
 if ($Benchmark) {
     Write-Host "`nRunning benchmarks..."
     & java "-Dsun.jnu.encoding=UTF-8" "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.Benchmarks
+    exit $LASTEXITCODE
+}
+
+if ($Classic) {
+    Write-Host "`nLaunching the 2002 UI, Swing layout..."
+    & java "-Dsun.jnu.encoding=UTF-8" "-Dfile.encoding=UTF-8" -cp $OutDir jsearch.SwingClassic
     exit $LASTEXITCODE
 }
 
