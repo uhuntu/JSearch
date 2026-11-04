@@ -168,6 +168,32 @@ def deepseek_ask(query):
     return data["choices"][0]["message"]["content"]
 
 
+def ai_answer_page(query, offset):
+    """One dialect block carrying the AI's synthesized answer. The 2002
+    protocol has no streaming and no socket timeout, so the first search
+    for a query simply waits for the generation (SearchThread's
+    openStream has none either - dial-up patience is the house style);
+    later pages are empty, and the applet's URL dedup would collapse them
+    anyway."""
+    if offset > 0:
+        return "\n</body></html>"
+    answer = deepseek_ask(query)
+    title = "AI 回答（DeepSeek 搜索并总结）"
+    url = "http://127.0.0.1:%d/ai/answer?q=%s" % (PORT, urllib.parse.quote(query))
+    return ("<p><a ref=%s>%s</a><br>\n%s</p>\n</body></html>"
+            % (clean(url, is_url=True), clean(title), clean(answer)))
+
+
+def ai_answer_html(query):
+    answer = deepseek_ask(query).replace("<", "&lt;").replace(">", "&gt;")
+    return ("<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\">"
+            "<title>AI 回答 · %s</title><style>body{font:15px/1.8 Tahoma,sans-serif;"
+            "max-width:820px;margin:24px auto;color:#222}h1{font-size:18px}"
+            "</style></head><body><h1>AI 回答 · %s</h1><pre style=\"white-space:pre-wrap;"
+            "font:inherit\">%s</pre><p><a href=\"/app/\">返回 JSearch</a></p></body></html>"
+            % (query[:60], query[:60], answer))
+
+
 def deepseek_fetch(url):
     """The Fetch API: one URL in, the page's body out as Markdown. This is
     what the applet's 工具 menu calls - the runner shows the text in >>预览."""
@@ -228,6 +254,30 @@ class Handler(BaseHTTPRequestHandler):
                     body = deepseek_ask(query).encode("utf-8")
             except Exception as exc:
                 body = ("DeepSeek ask error: %s: %s"
+                        % (type(exc).__name__, exc)).encode("utf-8")
+        elif url.path.startswith("/ai/search"):
+            label = "AI bridge"
+            try:
+                if not DEEPSEEK_KEY:
+                    body = ("<p><a ref=http://127.0.0.1:%d/bridge-error>AI 问答引擎："
+                            "DEEPSEEK_API_KEY not set</a><br>\nthe keyed engine stays off "
+                            "until the variable exists</p>" % PORT).encode("utf-8")
+                elif not query:
+                    body = "（缺少 q 参数）".encode("utf-8")
+                else:
+                    body = ai_answer_page(query, offset).encode("utf-8")
+            except Exception as exc:
+                body = error_block(label, exc).encode("utf-8")
+        elif url.path.startswith("/ai/answer"):
+            try:
+                if not DEEPSEEK_KEY:
+                    body = "AI 问答引擎：DEEPSEEK_API_KEY not set".encode("utf-8")
+                elif not query:
+                    body = "（缺少 q 参数）".encode("utf-8")
+                else:
+                    body = ai_answer_html(query).encode("utf-8")
+            except Exception as exc:
+                body = ("AI answer error: %s: %s"
                         % (type(exc).__name__, exc)).encode("utf-8")
         elif url.path.startswith("/deepseek"):
             label = "DeepSeek bridge"

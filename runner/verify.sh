@@ -190,16 +190,16 @@ check_trail() {
     # records load as six engines. Record 1's key carries a trailing space, so the
     # two Google keys stayed distinct and nothing was dropped. If someone trims
     # that space, this is the assertion that notices.
-    expect "[runner] engines in table = 6" "all 6 engine records loaded (no URL-key collision)"
+    expect "[runner] engines in table = 7" "all 7 engine records loaded (no URL-key collision)"
 
-    # The engine file defines 6 records in 2 categories: GB_Chinese Google, Baidu,
-    # LocalDemo, SearXNG and DeepSeek are Chinese, plain Google is English.
+    # The engine file defines 7 records in 2 categories: GB_Chinese Google, Baidu,
+    # LocalDemo, SearXNG, DeepSeek and AI 问答 are Chinese, plain Google is English.
     # Selecting the Chinese category therefore lists 5 of the 6 — and in
     # particular NOT English Google. This is the fact the prose kept getting
     # wrong ("the Chinese category lists both Google entries" — it never did;
     # the two Googles sit in different categories, which is a second,
     # independent reason no collision was visible).
-    count_is '^\[runner\] engine\[[0-9]\+\] = ' 5 "the Chinese category lists 5 of the 6 engines"
+    count_is '^\[runner\] engine\[[0-9]\+\] = ' 6 "the Chinese category lists 6 of the 7 engines"
     refute "= Google / Google" "English Google is absent from the Chinese category"
 
     # The fifth record is the SearXNG one, the sixth the DeepSeek one. In check
@@ -208,6 +208,7 @@ check_trail() {
     # bridges answer. --live and --combined assert the answering part.
     expect "= SearXNG / live web aggregation" "the SearXNG record loads as a Chinese engine"
     expect "= DeepSeek / " "the DeepSeek record loads as a Chinese engine"
+    expect "= AI " "the AI answer engine loads as a Chinese record"
 
     # The runner's deterministic setup found and selected the only engine that can
     # still answer out of the box: the local demo server.

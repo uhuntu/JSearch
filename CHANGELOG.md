@@ -98,6 +98,19 @@ are archive housekeeping. This repo does not version a live search service.
   desktop frame and refreshes the bundle through `build-cheerpj.sh`;
   `cheerpj-app/` is generated and gitignored apart from the authored
   `index.html`.
+- `runner/`: a seventh engine record, **AI 问答** — the engine-table
+  mechanism driving an AI answer generator. Its chain points at the
+  bridge's `/ai/search`, which runs the `/deepseek/ask` pipeline (search
+  DeepSeek's index with content, hand the pages to `deepseek-flash`) and
+  re-emits the synthesized cited answer as one 2002-dialect block, so the
+  untouched applet lists it as a result row and shows the whole answer in
+  >>预览. Double-clicking opens `/ai/answer`, the answer as a web page.
+  The 2002 protocol has no streaming and SearchThread has no socket
+  timeout, so the first search simply waits out the generation; later
+  pages are empty and the applet's URL dedup collapses them. Without
+  `DEEPSEEK_API_KEY` the record serves the bridge's own error block, like
+  the other keyed routes. verify.sh, README and CHANGELOG counts moved to
+  7 records / 6 in the Chinese category.
 - `runner/`: the host learns to host the ancestor. `versions/2000-08/`
   (v1.2.3) ships compiled 45.0 bytecode that modern JVMs still load, and
   its `JSApplet` carries an abandoned 2000 attempt at the hybrid
@@ -156,10 +169,10 @@ are archive housekeeping. This repo does not version a live search service.
   redesign, not the original.
 - A `runner` CI job, so that claim is checked on every push instead of resting
   on one screenshot. It runs the untouched applet headless under `xvfb` with
-  `run.sh --go`, then asserts the evidence trail the runner prints: 6 of 6
+  `run.sh --go`, then asserts the evidence trail the runner prints: 7 of 7
   engine records loaded (the URL-key collision that the old analysis reported
-  never actually happened), 5 of 6 listed in the Chinese category with English
-  Google absent and the `SearXNG` and `DeepSeek` records present, the demo
+  never actually happened), 6 of 7 listed in the Chinese category with English
+  Google absent and the `SearXNG`, `DeepSeek` and `AI 问答` records present, the demo
   engine selected,
   2 results out of 3 scraped blocks (the original dedup working), and a
   preview read back out of the applet's own result table.

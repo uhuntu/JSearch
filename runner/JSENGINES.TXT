@@ -40,3 +40,10 @@ http://127.0.0.1:8902/deepseek/search?q=^&page=`0
 <p><
 </p>
 
+http://127.0.0.1:8902/ai/
+AI 问答 / DeepSeek 搜索并总结（需 Key）
+Chinese
+http://127.0.0.1:8902/ai/search?q=^&page=`0
+<p><
+</p>
+

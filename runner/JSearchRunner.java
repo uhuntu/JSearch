@@ -164,7 +164,7 @@ public class JSearchRunner {
                 System.out.println("[runner] engines in table = " + applet.engDataTable.size()
                         + (isLegacyGeneration()
                            ? " (a 2000-generation engine file — the shipped one, unchanged)"
-                           : " (the file defines 6 and all 6 load: record 1's URL key has a"
+                           : " (the file defines 7 and all 7 load: record 1's URL key has a"
                              + " trailing space, which accidentally keeps the URL-keyed table"
                              + " from colliding)"));
                 for (int i = 0; i < applet.searchEnginesLi.getItemCount(); i++) {
